@@ -4,7 +4,7 @@ requires = ["hatchling>=1.18,<2.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "git-venv"
+name = "gvit"
 version = "0.0.1"
 description = "Automates virtual environment management for Git repositories"
 readme = "README.md"
@@ -18,9 +18,9 @@ classifiers = [
 ]
 
 [project.scripts]
-gitvenv = "git_venv.cli:main"
+gitvenv = "gvit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/jaimemartinagui/git-venv"
+Homepage = "https://github.com/jaimemartinagui/gvit"
 
 [tool.hatch.build.targets.sdist]

@@ -1,9 +1,9 @@
 
-# 🧩 git-venv
+# 🧩 gvit
 
 > **Automates virtual environment management for Git repositories.**
 
-`git-venv` is a command-line tool that automatically creates and synchronizes a virtual environment whenever you clone or update a repository. Its goal is to eliminate friction between **version control** and **Python environment management**.
+`gvit` is a command-line tool that automatically creates and synchronizes a virtual environment whenever you clone or update a repository. Its goal is to eliminate friction between **version control** and **Python environment management**.
 
 ---
 
@@ -19,7 +19,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-With **`git-venv`**, all of that disappears. When you clone, you'll already have a ready-to-use virtual environment configured with the repo dependencies.
+With **`gvit`**, all of that disappears. When you clone, you'll already have a ready-to-use virtual environment configured with the repo dependencies.
 
 ```bash
 gitvenv clone https://github.com/someone/project.git
@@ -29,7 +29,7 @@ gitvenv clone https://github.com/someone/project.git
 
 ---
 
-## ⚙️ What `git-venv` does
+## ⚙️ What `gvit` does
 
 * 🪄 **Automatically creates a virtual environment** when cloning a repo.
 * 🔄 **Synchronizes dependencies** when running `gitvenv pull` (if `pyproject.toml`, `requirements.txt`, etc. have changed).
@@ -41,16 +41,16 @@ gitvenv clone https://github.com/someone/project.git
 
 ## 💻 Installation
 
-> *The package is called `git-venv` on PyPI, but the command is `gitvenv`.*
+> *The package is called `gvit` on PyPI, but the command is `gitvenv`.*
 
 ```bash
-pip install git-venv
+pip install gvit
 ```
 
 Or with `pipx` (recommended for CLI tools):
 
 ```bash
-pipx install git-venv
+pipx install gvit
 ```
 
 ---
@@ -185,7 +185,7 @@ MIT © 2025 — [Your Name](https://github.com/yourusername)
 
 ## 💬 Contributing
 
-Contributions are welcome! Open an issue or submit a pull request on [GitHub](https://github.com/yourusername/git-venv).
+Contributions are welcome! Open an issue or submit a pull request on [GitHub](https://github.com/yourusername/gvit).
 
 ---
 
@@ -193,4 +193,4 @@ Contributions are welcome! Open an issue or submit a pull request on [GitHub](ht
 
 > *“One repo, its own environment — without thinking about it.”*
 
-The goal of **`git-venv`** is to eliminate the need to manually create or update virtual environments. Git and Python should work together seamlessly — this tool makes it possible.
+The goal of **`gvit`** is to eliminate the need to manually create or update virtual environments. Git and Python should work together seamlessly — this tool makes it possible.
