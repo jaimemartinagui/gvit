@@ -1,0 +1,3 @@
+"""
+Module with custom exceptions.
+"""
