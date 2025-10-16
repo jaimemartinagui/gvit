@@ -1,0 +1,26 @@
+
+[build-system]
+requires = ["hatchling>=1.18,<2.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "git-venv"
+version = "0.0.1"
+description = "Automates virtual environment management for Git repositories"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+authors = [{ name = "Jaime Martín Agüí", email = "jaimemartinagui@gmail.com" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+gitvenv = "git_venv.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jaimemartinagui/git-venv"
+
+[tool.hatch.build.targets.sdist]
