@@ -22,7 +22,7 @@ pip install -r requirements.txt
 With **`gvit`**, all of that disappears. When you clone, you'll already have a ready-to-use virtual environment configured with the repo dependencies.
 
 ```bash
-gitvenv clone https://github.com/someone/project.git
+gvit clone https://github.com/someone/project.git
 ```
 
 🎉 And you are ready to work!
@@ -32,7 +32,7 @@ gitvenv clone https://github.com/someone/project.git
 ## ⚙️ What `gvit` does
 
 * 🪄 **Automatically creates a virtual environment** when cloning a repo.
-* 🔄 **Synchronizes dependencies** when running `gitvenv pull` (if `pyproject.toml`, `requirements.txt`, etc. have changed).
+* 🔄 **Synchronizes dependencies** when running `gvit pull` (if `pyproject.toml`, `requirements.txt`, etc. have changed).
 * 🧠 **Remembers your preferred backend** (`venv`, `virtualenv`, `conda`, `pyenv`, etc.).
 * 🪶 **Does not interfere with Git**: it just enhances the workflow.
 * 🧰 **Optionally generates aliases** to integrate commands with Git.
@@ -41,7 +41,7 @@ gitvenv clone https://github.com/someone/project.git
 
 ## 💻 Installation
 
-> *The package is called `gvit` on PyPI, but the command is `gitvenv`.*
+> *The package is called `gvit` on PyPI, but the command is `gvit`.*
 
 ```bash
 pip install gvit
@@ -60,7 +60,7 @@ pipx install gvit
 ### 🌀 Clone a repo and create its environment
 
 ```bash
-gitvenv clone https://github.com/yourorg/my-project.git
+gvit clone https://github.com/yourorg/my-project.git
 ```
 
 Automatically creates a virtual environment named after the repository (e.g., `.venv-my-project`) and initializes it with dependencies.
@@ -70,7 +70,7 @@ Automatically creates a virtual environment named after the repository (e.g., `.
 ### 🔄 Synchronize dependencies when updating
 
 ```bash
-gitvenv pull
+gvit pull
 ```
 
 Runs `git pull` and, if dependencies have changed, updates the environment.
@@ -80,14 +80,14 @@ Runs `git pull` and, if dependencies have changed, updates the environment.
 ### ⚙️ Configure automatic aliases
 
 ```bash
-gitvenv create-aliases
+gvit create-aliases
 ```
 
 Creates a `git()` function in your shell (Bash or Zsh) that intercepts only relevant commands:
 
 ```bash
-git clone ...  →  gitvenv clone ...
-git pull  ...  →  gitvenv pull ...
+git clone ...  →  gvit clone ...
+git pull  ...  →  gvit pull ...
 ```
 
 Does not affect `git commit`, `push`, or other commands.
@@ -95,7 +95,7 @@ Does not affect `git commit`, `push`, or other commands.
 To revert the aliases:
 
 ```bash
-gitvenv remove-aliases
+gvit remove-aliases
 ```
 
 ---
@@ -109,7 +109,7 @@ gitvenv remove-aliases
    * `virtualenv`
    * `conda`
    * `pyenv`
-3. Associates the environment with the repo via a small `.gitvenv` metadata file.
+3. Associates the environment with the repo via a small `.gvit` metadata file.
 4. On each `pull`, checks if dependency files (`requirements.txt`, `pyproject.toml`, `environment.yml`, etc.) have changed.
 5. If they have, **automatically updates the environment**.
 
@@ -119,7 +119,7 @@ gitvenv remove-aliases
 
 Preferences can be set in a global configuration file:
 
-`~/.config/gitvenv/config.toml`
+`~/.config/gvit/config.toml`
 
 Example:
 
@@ -163,16 +163,16 @@ git_venv/
 
 ```bash
 # Set preferred backend
-gitvenv config --backend conda
+gvit config --backend conda
 
 # Clone project and create environment
-gitvenv clone https://github.com/example/project.git
+gvit clone https://github.com/example/project.git
 
 # Activate the environment
 source .venv-project/bin/activate
 
 # Sync after repo update
-gitvenv pull
+gvit pull
 ```
 
 ---

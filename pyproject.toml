@@ -16,9 +16,20 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "typer>=0.19.0,<1.0.0",
+    "rich>=14.0.0,<15.0.0",
+    "toml>=0.10.1,<1.0.0"
+]
+
+# [project.optional-dependencies]
+# dev = [
+#     "pytest>=7.0,<8.0",
+#     "black>=23.0,<24.0"
+# ]
 
 [project.scripts]
-gitvenv = "gvit.cli:main"
+gvit = "gvit.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/jaimemartinagui/gvit"
