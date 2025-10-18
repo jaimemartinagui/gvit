@@ -8,25 +8,13 @@ import typer
 import toml
 
 from gvit.utils.globals import CONFIG_DIR, CONFIG_FILE
+from gvit.options.config import backend_option, auto_create_env_option, alias_commands_option
 
 
 def config(
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Default virtual environment backend (virtualenv/conda/pyenv)",
-    ),
-    auto_create_env: bool = typer.Option(
-        None,
-        "--auto-create-env/--no-auto-create-env",
-        help="Automatically create environment on git clone",
-    ),
-    alias_commands: bool = typer.Option(
-        None,
-        "--alias-commands/--no-alias-commands",
-        help="Enable git command aliases",
-    ),
+    backend: str = backend_option,
+    auto_create_env: bool = auto_create_env_option,
+    alias_commands: bool = alias_commands_option,
 ):
     """Configure gvit and generate ~/.config/gvit/config.toml configuration file."""
     ensure_config_dir()
