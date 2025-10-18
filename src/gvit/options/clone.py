@@ -13,4 +13,10 @@ backend_option = Option(
     None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)}).",
 )
 
+python_option = Option(None, "--python", "-p", help="Python version.")
+
+install_deps_option = Option(None, "--install-deps", help="Install dependencies in the virtual environment.")
+
+activate_option = Option(None, "--activate", help="Activate virtual environment.")
+
 verbose_option = Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")

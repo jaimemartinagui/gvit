@@ -10,18 +10,8 @@ backend_option = Option(
     None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)}).",
 )
 
-# auto_activate_env_option = Option(
-#     None,
-#     "--auto-create-env/--no-auto-create-env",
-#     help="Automatically activate environment on git clone",
-# )
+python_option = Option(None, "--python", "-p", help="Default Python version.")
 
-auto_create_env_option = Option(
-    None,
-    "--auto-create-env/--no-auto-create-env",
-    help="Automatically create environment on git clone",
-)
+install_deps_option = Option(None, "--install-deps", help="Default install-deps in the virtual environment.")
 
-alias_commands_option = Option(
-    None, "--alias-commands/--no-alias-commands", help="Enable git command aliases",
-)
+activate_option = Option(None, "--activate", help="Default activate virtual environment.")

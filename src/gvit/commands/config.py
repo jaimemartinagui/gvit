@@ -5,62 +5,69 @@ Module for the "gvit config" command.
 import typer
 
 from gvit.utils.globals import SUPPORTED_BACKENDS
-from gvit.options.config import backend_option, auto_create_env_option, alias_commands_option
-from gvit.utils.utils import ensure_config_dir, load_config, save_config
+from gvit.options.config import (
+    backend_option,
+    python_option,
+    install_deps_option,
+    activate_option
+)
+from gvit.utils.utils import (
+    ensure_config_dir,
+    load_config,
+    save_config,
+    get_default_backend,
+    get_default_python,
+    get_default_install_deps,
+    get_default_activate
+)
+from gvit.validators import validate_backend, validate_python
 
 
 def config(
     backend: str = backend_option,
-    # auto_activate_env: bool = auto_create_env_option,
-    # auto_create_env: bool = auto_create_env_option,
-    # alias_commands: bool = alias_commands_option,
+    python: str = python_option,
+    install_deps: bool = install_deps_option,
+    activate: bool = activate_option
 ) -> None:
     """Configure gvit and generate ~/.config/gvit/config.toml configuration file."""
     ensure_config_dir()
-    config_data = load_config()
-
-    if backend and backend not in SUPPORTED_BACKENDS:
-        raise typer.BadParameter(f"Unsupported backend '{backend}'. Supported backends: ({'/'.join(SUPPORTED_BACKENDS)})")
+    config = load_config()
 
     if backend is None:
-        backend_choice = typer.prompt(
-            f"Select default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})",
-            default=config_data.get("defaults", {}).get("backend", "venv"),
+        backend = typer.prompt(
+            f"- Select default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})",
+            default=get_default_backend(config),
         ).strip()
-        print(backend_choice)
+    validate_backend(backend)
 
-    # if auto_create_env is None:
-    #     auto_create_env = typer.confirm(
-    #         "Enable automatic environment creation on git clone?",
-    #         default=config_data.get("gitvenv", {}).get("auto_create_env", True),
-    #     )
+    if python is None:
+        python = typer.prompt(
+            f"- Select default Python version",
+            default=get_default_python(config),
+        ).strip()
+    validate_python(python)
 
-    # if alias_commands is None:
-    #     alias_commands = typer.confirm(
-    #         "Enable git command aliases?",
-    #         default=config_data.get("gitvenv", {}).get("alias_commands", True),
-    #     )
+    if install_deps is None:
+        default_install_deps = get_default_install_deps(config)
+        install_deps = typer.confirm(
+            f"- Enable default install-deps (Y/n)? [{'Y' if default_install_deps else "n"}]",
+            default=default_install_deps,
+            show_default=False
+        )
 
-    # config_data["general"] = {"default_venv_backend": backend}
-    # config_data["gitvenv"] = {
-    #     "auto_create_env": auto_create_env,
-    #     "alias_commands": alias_commands,
-    # }
+    if activate is None:
+        default_activate = get_default_activate(config)
+        activate = typer.confirm(
+            f"- Enable default activate (Y/n)? [{'Y' if default_activate else "n"}]",
+            default=default_activate,
+            show_default=False
+        )
 
-    # save_config(config_data)
+    config["defaults"] = {
+        "backend": backend,
+        "python": python,
+        "install_deps": install_deps,
+        "activate": activate
+    }
 
-
-
-
-
-
-# # ~/.config/gitvenv/config.toml
-# [defaults]
-# backend = "conda"          # o "venv", "poetry", "hatch"...
-# auto_install = true
-# auto_activate = true
-# envs_dir = "~/.virtualenvs"
-
-# [overrides]
-# "repos/ml-project" = { backend = "venv" }
-# "repos/legacy-app" = { backend = "conda" }
+    save_config(config)

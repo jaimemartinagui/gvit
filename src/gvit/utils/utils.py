@@ -9,7 +9,15 @@ import pathlib
 import toml
 import typer
 
-from gvit.utils.globals import CONFIG_DIR, CONFIG_FILE
+from gvit.utils.globals import (
+    CONFIG_DIR,
+    CONFIG_FILE,
+    DEFAULT_BACKEND,
+    DEFAULT_PYTHON,
+    DEFAULT_INSTALL_DEPS,
+    DEFAULT_ACTIVATE,
+    DEFAULT_VERBOSE
+)
 
 
 def get_version() -> str:
@@ -43,29 +51,34 @@ def save_config(config: dict[str, Any]) -> None:
     """Method to save the configuration file."""
     with open(CONFIG_FILE, "w") as f:
         toml.dump(config, f)
-    typer.echo(f"Configuration saved to {CONFIG_FILE}")
+    typer.secho(f"\nConfiguration saved -> {CONFIG_FILE}", fg=typer.colors.GREEN)
 
 
-def get_backend() -> str:
-    config = load_config()
-    return config.get("general", {}).get("default_venv_backend", "virtualenv")
+def get_default_backend(config: dict | None = None) -> str:
+    """Function to get the default backend from the config."""
+    config = config or load_config()
+    return config.get("defaults", {}).get("backend", DEFAULT_BACKEND)
 
 
-def get_verbose() -> str:
-    config = load_config()
-    return config.get("general", {}).get("verbose", False)
+def get_default_python(config: dict | None = None) -> str:
+    """Function to get the default python version from the config."""
+    config = config or load_config()
+    return config.get("defaults", {}).get("python", DEFAULT_PYTHON)
 
 
+def get_default_install_deps(config: dict | None = None) -> bool:
+    """Function to get the default install_deps from the config."""
+    config = config or load_config()
+    return config.get("defaults", {}).get("install_deps", DEFAULT_INSTALL_DEPS)
 
 
+def get_default_activate(config: dict | None = None) -> bool:
+    """Function to get the default activate from the config."""
+    config = config or load_config()
+    return config.get("defaults", {}).get("activate", DEFAULT_ACTIVATE)
 
 
-
-def get_auto_create_env() -> bool:
-    config = load_config()
-    return config.get("gitvenv", {}).get("auto_create_env", True)
-
-
-def get_alias_commands() -> bool:
-    config = load_config()
-    return config.get("gitvenv", {}).get("alias_commands", True)
+def get_default_verbose(config: dict | None = None) -> bool:
+    """Function to get the default verbose from the config."""
+    config = config or load_config()
+    return config.get("defaults", {}).get("verbose", DEFAULT_VERBOSE)
