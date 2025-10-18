@@ -2,74 +2,57 @@
 Module for the "gvit config" command.
 """
 
-from typing import Any
-
 import typer
-import toml
 
-from gvit.utils.globals import CONFIG_DIR, CONFIG_FILE
+from gvit.utils.globals import SUPPORTED_BACKENDS
 from gvit.options.config import backend_option, auto_create_env_option, alias_commands_option
+from gvit.utils.utils import ensure_config_dir, load_config, save_config
 
 
 def config(
     backend: str = backend_option,
-    auto_create_env: bool = auto_create_env_option,
-    alias_commands: bool = alias_commands_option,
-):
+    # auto_activate_env: bool = auto_create_env_option,
+    # auto_create_env: bool = auto_create_env_option,
+    # alias_commands: bool = alias_commands_option,
+) -> None:
     """Configure gvit and generate ~/.config/gvit/config.toml configuration file."""
     ensure_config_dir()
     config_data = load_config()
 
-    # -----------------------
-    # Interactivo si no se pasa por CLI
-    # -----------------------
+    if backend and backend not in SUPPORTED_BACKENDS:
+        raise typer.BadParameter(f"Unsupported backend '{backend}'. Supported backends: ({'/'.join(SUPPORTED_BACKENDS)})")
+
     if backend is None:
         backend_choice = typer.prompt(
-            "Select default virtual environment backend [virtualenv/conda/pyenv]",
-            default=config_data.get("general", {}).get("default_venv_backend", "virtualenv"),
-        )
-        backend = backend_choice.strip()
+            f"Select default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})",
+            default=config_data.get("defaults", {}).get("backend", "venv"),
+        ).strip()
+        print(backend_choice)
 
-    if auto_create_env is None:
-        auto_create_env = typer.confirm(
-            "Enable automatic environment creation on git clone?",
-            default=config_data.get("gitvenv", {}).get("auto_create_env", True),
-        )
+    # if auto_create_env is None:
+    #     auto_create_env = typer.confirm(
+    #         "Enable automatic environment creation on git clone?",
+    #         default=config_data.get("gitvenv", {}).get("auto_create_env", True),
+    #     )
 
-    if alias_commands is None:
-        alias_commands = typer.confirm(
-            "Enable git command aliases?",
-            default=config_data.get("gitvenv", {}).get("alias_commands", True),
-        )
+    # if alias_commands is None:
+    #     alias_commands = typer.confirm(
+    #         "Enable git command aliases?",
+    #         default=config_data.get("gitvenv", {}).get("alias_commands", True),
+    #     )
 
-    # -----------------------
-    # Construir estructura TOML
-    # -----------------------
-    config_data["general"] = {"default_venv_backend": backend}
-    config_data["gitvenv"] = {
-        "auto_create_env": auto_create_env,
-        "alias_commands": alias_commands,
-    }
+    # config_data["general"] = {"default_venv_backend": backend}
+    # config_data["gitvenv"] = {
+    #     "auto_create_env": auto_create_env,
+    #     "alias_commands": alias_commands,
+    # }
 
-    save_config(config_data)
-    typer.echo(f"Configuration saved to {CONFIG_FILE}")
+    # save_config(config_data)
 
 
 
-def ensure_config_dir() -> None:
-    """Method to create the configuration file if necessary."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def load_config() -> dict[str, Any]:
-    """Method to load the configuration file."""
-    return toml.load(CONFIG_FILE) if CONFIG_FILE.exists() else {}
-
-
-def save_config(config: dict[str, Any]) -> None:
-    """Method to save the configuration file."""
-    with open(CONFIG_FILE, "w") as f:
-        toml.dump(config, f)
 
 # # ~/.config/gitvenv/config.toml
 # [defaults]
@@ -81,20 +64,3 @@ def save_config(config: dict[str, Any]) -> None:
 # [overrides]
 # "repos/ml-project" = { backend = "venv" }
 # "repos/legacy-app" = { backend = "conda" }
-
-
-
-# Función de ejemplo para leer configuración en otros comandos
-def get_backend() -> str:
-    config = load_config()
-    return config.get("general", {}).get("default_venv_backend", "virtualenv")
-
-
-def get_auto_create_env() -> bool:
-    config = load_config()
-    return config.get("gitvenv", {}).get("auto_create_env", True)
-
-
-def get_alias_commands() -> bool:
-    config = load_config()
-    return config.get("gitvenv", {}).get("alias_commands", True)

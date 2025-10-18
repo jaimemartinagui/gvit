@@ -1,3 +1,0 @@
-"""
-Module with custom types.
-"""
