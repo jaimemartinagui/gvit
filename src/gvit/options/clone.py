@@ -15,8 +15,10 @@ backend_option = Option(
 
 python_option = Option(None, "--python", "-p", help="Python version.")
 
-install_deps_option = Option(None, "--install-deps", help="Install dependencies in the virtual environment.")
+install_deps_option = Option(None, "--install-deps", "-i", help="Install dependencies in the virtual environment.")
 
-activate_option = Option(None, "--activate", help="Activate virtual environment.")
+deps_path_option = Option(None, "--deps-path", "-d", help="Path where to look for the dependencies (relative to repository root path).")
+
+activate_option = Option(None, "--activate", "-a", help="Activate virtual environment.")
 
 verbose_option = Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")

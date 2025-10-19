@@ -9,6 +9,7 @@ from gvit.options.config import (
     backend_option,
     python_option,
     install_deps_option,
+    deps_path_option,
     activate_option
 )
 from gvit.utils.utils import (
@@ -18,15 +19,17 @@ from gvit.utils.utils import (
     get_default_backend,
     get_default_python,
     get_default_install_deps,
+    get_default_deps_path,
     get_default_activate
 )
-from gvit.validators import validate_backend, validate_python
+from gvit.utils.validators import validate_backend, validate_python
 
 
 def config(
     backend: str = backend_option,
     python: str = python_option,
     install_deps: bool = install_deps_option,
+    deps_path: str = deps_path_option,
     activate: bool = activate_option
 ) -> None:
     """Configure gvit and generate ~/.config/gvit/config.toml configuration file."""
@@ -55,6 +58,12 @@ def config(
             show_default=False
         )
 
+    if deps_path is None:
+        deps_path = typer.prompt(
+            f"- Select default dependencies path",
+            default=get_default_deps_path(config),
+        ).strip()
+
     if activate is None:
         default_activate = get_default_activate(config)
         activate = typer.confirm(
@@ -67,6 +76,7 @@ def config(
         "backend": backend,
         "python": python,
         "install_deps": install_deps,
+        "deps_path": deps_path,
         "activate": activate
     }
 
