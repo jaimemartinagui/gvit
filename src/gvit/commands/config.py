@@ -10,7 +10,6 @@ from gvit.options.config import (
     python_option,
     install_deps_option,
     deps_path_option,
-    activate_option
 )
 from gvit.utils.utils import (
     ensure_config_dir,
@@ -20,7 +19,6 @@ from gvit.utils.utils import (
     get_default_python,
     get_default_install_deps,
     get_default_deps_path,
-    get_default_activate
 )
 from gvit.utils.validators import validate_backend, validate_python
 
@@ -30,9 +28,14 @@ def config(
     python: str = python_option,
     install_deps: bool = install_deps_option,
     deps_path: str = deps_path_option,
-    activate: bool = activate_option
 ) -> None:
-    """Configure gvit and generate ~/.config/gvit/config.toml configuration file."""
+    """
+    Configure gvit and generate ~/.config/gvit/config.toml configuration file.
+
+    It defines the defaults options to be used if not provided in the different commands or in the repository config.
+
+    Omitted options will be requested via interactive prompts.
+    """
     ensure_config_dir()
     config = load_config()
 
@@ -64,20 +67,11 @@ def config(
             default=get_default_deps_path(config),
         ).strip()
 
-    if activate is None:
-        default_activate = get_default_activate(config)
-        activate = typer.confirm(
-            f"- Enable default activate (Y/n)? [{'Y' if default_activate else "n"}]",
-            default=default_activate,
-            show_default=False
-        )
-
     config["defaults"] = {
         "backend": backend,
         "python": python,
         "install_deps": install_deps,
         "deps_path": deps_path,
-        "activate": activate
     }
 
     save_config(config)

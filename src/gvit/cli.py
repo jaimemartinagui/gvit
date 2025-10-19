@@ -17,8 +17,8 @@ from gvit.utils.globals import ASCII_LOGO
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
 app.command()(config)
-app.command()(pull)
-app.command()(clone)
+app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(clone)
+# app.command()(pull)
 
 
 @app.callback(invoke_without_command=True)

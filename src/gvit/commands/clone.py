@@ -13,7 +13,6 @@ from gvit.options.clone import (
     python_option,
     install_deps_option,
     deps_path_option,
-    activate_option,
     verbose_option
 )
 from gvit.utils.utils import (
@@ -23,23 +22,30 @@ from gvit.utils.utils import (
     get_default_python,
     get_default_install_deps,
     get_default_deps_path,
-    get_default_activate,
     get_default_verbose
 )
 from gvit.utils.validators import validate_backend, validate_python
 
 
 def clone(
+    ctx: typer.Context,
     repo_url: str,
     target_dir: str = target_dir_option,
     backend: str = backend_option,
     python: str = python_option,
     install_deps: bool = install_deps_option,
     deps_path: str = deps_path_option,
-    activate: bool = activate_option,
     verbose: bool = verbose_option
 ) -> None:
-    """Clone a repo and create a virtual environment."""
+    """
+    Clone a repository and create a virtual environment.
+
+    Any extra options will be passed directly to the `git clone` command.
+
+    Long options do not conflict between `gvit clone` and `git clone`.
+
+    Short options might conflict; in that case, use the long form for the `git clone` options.
+    """
 
     # 1. Load the user config
     config = load_config()
@@ -47,7 +53,7 @@ def clone(
 
     # 2. Clone the repo
     target_dir = target_dir or Path(repo_url).stem
-    _git_clone(repo_url, target_dir, verbose)
+    _git_clone(repo_url, target_dir, verbose, ctx.args)
 
     # 3. Load the repo config
     repo_config = load_repo_config(target_dir)
@@ -64,21 +70,20 @@ def clone(
     install_deps = install_deps or get_default_install_deps(config)
     if install_deps:
         deps_path = deps_path or repo_config.get("deps_path") or get_default_deps_path(config)
-        print(deps_path)
         _install_deps(virtual_env_name, backend, deps_path, target_dir, verbose)
 
-    # 6. Activate environment
-    # activate = activate or get_default_activate(config)
-    # if activate:
-    #     _activate_virtual_env(virtual_env_name, backend, verbose)
+    # 6. Show message to activate the environment
+    _show_activate_message(virtual_env_name, backend)
 
 
-def _git_clone(repo_url: str, target_dir: str, verbose: bool) -> None:
+def _git_clone(repo_url: str, target_dir: str, verbose: bool, extra_args: list[str] | None = None) -> None:
     """Function to clone the repository."""
-    typer.echo(f"- Cloning repository: {repo_url}...")
+    typer.echo(f"- Cloning repository -> {repo_url}...")
     try:
+        cmd = ["git", "clone", repo_url, target_dir] + (extra_args or [])
+        print(cmd)
         result = subprocess.run(
-            ["git", "clone", repo_url, target_dir],
+            ["git", "clone", repo_url, target_dir] + (extra_args or []),
             check=True,
             capture_output=True,
             text=True,
@@ -88,13 +93,12 @@ def _git_clone(repo_url: str, target_dir: str, verbose: bool) -> None:
     except subprocess.CalledProcessError as e:
         typer.secho(f"\nGit clone failed:\n{e.stderr}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-
     typer.secho(f"Repository was cloned!", fg=typer.colors.GREEN)
 
 
 def _create_virtual_env(virtual_env_name: str, backend: str, python: str, verbose: bool) -> None:
     """Function to create the virtual environment for the repository."""
-    typer.echo(f"\n- Creating virtual environment ({backend} - Python {python}): {virtual_env_name}...")
+    typer.echo(f"\n- Creating virtual environment ({backend} - Python {python}) -> {virtual_env_name}...")
     if backend == "conda":
         _create_conda_env(virtual_env_name, python, verbose)
     typer.secho(f"Virtual environment was created!", fg=typer.colors.GREEN)
@@ -153,25 +157,8 @@ def _install_deps_conda_env(virtual_env_name: str, deps_path: str, verbose: bool
         raise typer.Exit(code=1)
 
 
-# def _activate_virtual_env(virtual_env_name: str, backend: str, verbose: bool) -> None:
-#     """Function to activate the virtual environment."""
-#     typer.echo("\n- Activating virtual environment...")
-#     if backend == "conda":
-#         _activate_conda_env(virtual_env_name, verbose)
-#     typer.secho(f"Virtual environment was activated!", fg=typer.colors.GREEN)
-
-
-# def _activate_conda_env(virtual_env_name: str, verbose: bool) -> None:
-#     """Function to activate the conda virtual environment."""
-#     try:
-#         result = subprocess.run(
-#             ["conda", "activate", virtual_env_name],
-#             check=True,
-#             capture_output=True,
-#             text=True,
-#         )
-#         if verbose and result.stdout:
-#             typer.echo(result.stdout)
-#     except subprocess.CalledProcessError as e:
-#         typer.secho(f"Failed to activate conda environment:\n{e.stderr}", fg=typer.colors.RED)
-#         raise typer.Exit(code=1)
+def _show_activate_message(virtual_env_name: str, backend: str) -> None:
+    """Function to show the command to activate the environment."""
+    typer.echo("\n- Activate virtual environment with the following command -> ", nl=False)
+    if backend == "conda":
+        typer.secho(f"conda activate {virtual_env_name}", fg=typer.colors.YELLOW)

@@ -19,6 +19,4 @@ install_deps_option = Option(None, "--install-deps", "-i", help="Install depende
 
 deps_path_option = Option(None, "--deps-path", "-d", help="Path where to look for the dependencies (relative to repository root path).")
 
-activate_option = Option(None, "--activate", "-a", help="Activate virtual environment.")
-
 verbose_option = Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")

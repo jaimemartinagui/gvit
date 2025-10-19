@@ -53,7 +53,6 @@ def load_config() -> dict[str, Any]:
     python = "3.11"
     install_deps = true
     deps_path = "pyproject.toml"
-    activate = true
     ---------
     """
     return toml.load(CONFIG_FILE) if CONFIG_FILE.exists() else {}
@@ -117,12 +116,6 @@ def get_default_deps_path(config: dict | None = None) -> str:
     """Function to get the default deps_path from the config."""
     config = config or load_config()
     return config.get("defaults", {}).get("deps_path", DEFAULT_DEPS_PATH)
-
-
-def get_default_activate(config: dict | None = None) -> bool:
-    """Function to get the default activate from the config."""
-    config = config or load_config()
-    return config.get("defaults", {}).get("activate", DEFAULT_ACTIVATE)
 
 
 def get_default_verbose(config: dict | None = None) -> bool:
