@@ -2,7 +2,7 @@
 Module with utility functions.
 """
 
-from typing import Any
+from typing import cast
 import importlib.metadata
 from pathlib import Path
 
@@ -10,16 +10,16 @@ import toml
 import typer
 
 from gvit.utils.globals import (
-    CONFIG_DIR,
-    CONFIG_FILE,
+    LOCAL_CONFIG_DIR,
+    LOCAL_CONFIG_FILE,
     DEFAULT_BACKEND,
     DEFAULT_PYTHON,
     DEFAULT_INSTALL_DEPS,
     DEFAULT_DEPS_PATH,
-    DEFAULT_ACTIVATE,
     REPO_CONFIG_FILE,
     DEFAULT_VERBOSE
 )
+from gvit.utils.schemas import LocalConfig, RepoConfig
 
 
 def get_version() -> str:
@@ -39,86 +39,64 @@ def get_version() -> str:
         return version
 
 
-def ensure_config_dir() -> None:
-    """Method to create the configuration file if necessary."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+def ensure_local_config_dir() -> None:
+    """Method to create the local configuration folder if necessary."""
+    LOCAL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def load_config() -> dict[str, Any]:
-    """
-    Method to load the configuration file.
-    ---------
-    [defaults]
-    backend = "conda"
-    python = "3.11"
-    install_deps = true
-    deps_path = "pyproject.toml"
-    ---------
-    """
-    return toml.load(CONFIG_FILE) if CONFIG_FILE.exists() else {}
+def load_local_config() -> LocalConfig:
+    """Method to load the local configuration file."""
+    return cast(LocalConfig, toml.load(LOCAL_CONFIG_FILE) if LOCAL_CONFIG_FILE.exists() else {})
 
 
-def load_repo_config(repo_path: str) -> dict[str, Any]:
+def load_repo_config(repo_path: str) -> RepoConfig:
     """
     Method to load the configuration file from the repository.
     It looks for a .gvit.toml file in the root of the repo. If it does not exist it looks for
     a tool.gvit section in the pyproject.toml.
-
-    The structure in the .gvit.toml file is as follows:
-    ---------
-    [gvit]
-    python = "3.11"
-    deps_path = "requirements.txt"
-    ---------
-
-    The structure in the pyproject.toml file is as follows:
-    ---------
-    [tool.gvit]
-    python = "3.11"
-    deps_path = "requirements.txt"
-    ---------
     """
     config_file_path = Path(repo_path) / REPO_CONFIG_FILE
     if config_file_path.exists():
-        return toml.load(config_file_path).get("gvit", {})
+        return cast(RepoConfig, toml.load(config_file_path))
     pyproject_path = Path(repo_path) / "pyproject.toml"
     if pyproject_path.exists():
-        return toml.load(pyproject_path).get("tool", {}).get("gvit", {})
+        gvit_config = toml.load(pyproject_path).get("tool", {}).get("gvit", {})
+        return {"gvit": gvit_config}
     return {}
 
 
-def save_config(config: dict[str, Any]) -> None:
-    """Method to save the configuration file."""
-    with open(CONFIG_FILE, "w") as f:
+def save_local_config(config: LocalConfig) -> None:
+    """Method to save the local configuration file."""
+    with open(LOCAL_CONFIG_FILE, "w") as f:
         toml.dump(config, f)
-    typer.secho(f"\nConfiguration saved -> {CONFIG_FILE}", fg=typer.colors.GREEN)
+    typer.secho(f"\nConfiguration saved -> {LOCAL_CONFIG_FILE}", fg=typer.colors.GREEN)
 
 
-def get_default_backend(config: dict | None = None) -> str:
-    """Function to get the default backend from the config."""
-    config = config or load_config()
+def get_default_backend(config: LocalConfig | None = None) -> str:
+    """Function to get the default backend from the local config."""
+    config = config or load_local_config()
     return config.get("defaults", {}).get("backend", DEFAULT_BACKEND)
 
 
-def get_default_python(config: dict | None = None) -> str:
-    """Function to get the default python version from the config."""
-    config = config or load_config()
+def get_default_python(config: LocalConfig | None = None) -> str:
+    """Function to get the default python version from the local config."""
+    config = config or load_local_config()
     return config.get("defaults", {}).get("python", DEFAULT_PYTHON)
 
 
-def get_default_install_deps(config: dict | None = None) -> bool:
-    """Function to get the default install_deps from the config."""
-    config = config or load_config()
+def get_default_install_deps(config: LocalConfig | None = None) -> bool:
+    """Function to get the default install_deps from the local config."""
+    config = config or load_local_config()
     return config.get("defaults", {}).get("install_deps", DEFAULT_INSTALL_DEPS)
 
 
-def get_default_deps_path(config: dict | None = None) -> str:
-    """Function to get the default deps_path from the config."""
-    config = config or load_config()
+def get_default_deps_path(config: LocalConfig | None = None) -> str:
+    """Function to get the default deps_path from the local config."""
+    config = config or load_local_config()
     return config.get("defaults", {}).get("deps_path", DEFAULT_DEPS_PATH)
 
 
-def get_default_verbose(config: dict | None = None) -> bool:
-    """Function to get the default verbose from the config."""
-    config = config or load_config()
+def get_default_verbose(config: LocalConfig | None = None) -> bool:
+    """Function to get the default verbose from the local config."""
+    config = config or load_local_config()
     return config.get("defaults", {}).get("verbose", DEFAULT_VERBOSE)

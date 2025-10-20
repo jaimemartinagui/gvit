@@ -2,6 +2,8 @@
 Module for the "gvit config" command.
 """
 
+from typing import cast
+
 import typer
 
 from gvit.utils.globals import SUPPORTED_BACKENDS
@@ -12,15 +14,18 @@ from gvit.options.config import (
     deps_path_option,
 )
 from gvit.utils.utils import (
-    ensure_config_dir,
-    load_config,
-    save_config,
+    ensure_local_config_dir,
+    load_local_config,
+    save_local_config,
     get_default_backend,
     get_default_python,
     get_default_install_deps,
-    get_default_deps_path,
+    get_default_deps_path
 )
 from gvit.utils.validators import validate_backend, validate_python
+from gvit.utils.schemas import LocalConfig
+from gvit.utils.exceptions import CondaNotFoundError
+from gvit.backends.conda import CondaBackend
 
 
 def config(
@@ -36,8 +41,8 @@ def config(
 
     Omitted options will be requested via interactive prompts.
     """
-    ensure_config_dir()
-    config = load_config()
+    ensure_local_config_dir()
+    config = load_local_config()
 
     if backend is None:
         backend = typer.prompt(
@@ -45,6 +50,16 @@ def config(
             default=get_default_backend(config),
         ).strip()
     validate_backend(backend)
+    conda_path = None
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        conda_path = conda_backend.get_path()
+        if not conda_path or not conda_backend.is_available(conda_path):
+            raise CondaNotFoundError(
+                "Conda is not installed or could not be found in common installation paths. "
+                "You can also specify the path manually in your configuration file under "
+                "`backends.conda.path`."
+            )
 
     if python is None:
         python = typer.prompt(
@@ -67,11 +82,28 @@ def config(
             default=get_default_deps_path(config),
         ).strip()
 
-    config["defaults"] = {
-        "backend": backend,
-        "python": python,
-        "install_deps": install_deps,
-        "deps_path": deps_path,
-    }
+    config = _get_updated_local_config(backend, python, install_deps, deps_path, conda_path)
 
-    save_config(config)
+    save_local_config(config)
+
+
+def _get_updated_local_config(
+    backend: str, python: str, install_deps: bool, deps_path: str, conda_path: str | None
+) -> LocalConfig:
+    """Function to build the local configuration file."""
+    config = {
+        "defaults": {
+            "backend": backend,
+            "python": python,
+            "install_deps": install_deps,
+            "deps_path": deps_path
+        }
+    }
+    backends_config = {
+        "backends": {
+            "conda": {
+                "path": conda_path
+            }
+        }
+    } if conda_path else {}
+    return cast(LocalConfig, {**config, **backends_config})

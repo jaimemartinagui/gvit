@@ -9,6 +9,8 @@ from gvit.utils.globals import SUPPORTED_BACKENDS
 
 target_dir_option = Option(None, "--target-dir", "-t", help="Directory to clone into.")
 
+venv_name_option = Option(None, "--venv-name", "-n", help="Name of the virtual environment to create.")
+
 backend_option = Option(
     None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)}).",
 )

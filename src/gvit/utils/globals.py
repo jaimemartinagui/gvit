@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 
 
-CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "gvit"
-CONFIG_FILE = CONFIG_DIR / "config.toml"
+LOCAL_CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "gvit"
+LOCAL_CONFIG_FILE = LOCAL_CONFIG_DIR / "config.toml"
 REPO_CONFIG_FILE = ".gvit.toml"
 
-DEFAULT_BACKEND = "venv"
+DEFAULT_BACKEND = "conda"
 DEFAULT_PYTHON = "3.11"
 DEFAULT_ACTIVATE = True
 DEFAULT_INSTALL_DEPS = True
