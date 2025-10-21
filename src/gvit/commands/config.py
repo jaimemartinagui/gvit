@@ -53,8 +53,8 @@ def config(
     conda_path = None
     if backend == "conda":
         conda_backend = CondaBackend()
-        conda_path = conda_backend.get_path()
-        if not conda_path or not conda_backend.is_available(conda_path):
+        conda_path = conda_backend.path
+        if not conda_backend.is_available():
             raise CondaNotFoundError(
                 "Conda is not installed or could not be found in common installation paths. "
                 "You can also specify the path manually in your configuration file under "

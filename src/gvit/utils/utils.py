@@ -100,3 +100,20 @@ def get_default_verbose(config: LocalConfig | None = None) -> bool:
     """Function to get the default verbose from the local config."""
     config = config or load_local_config()
     return config.get("defaults", {}).get("verbose", DEFAULT_VERBOSE)
+
+
+def extract_repo_name_from_url(repo_url: str) -> str:
+    """
+    Extract repository name from Git URL.
+    
+    Handles various Git URL formats:
+    - https://github.com/user/repo.git -> repo
+    - https://github.com/user/repo -> repo
+    - git@github.com:user/repo.git -> repo
+    - /path/to/local/repo -> repo
+    """
+    repo_url = repo_url[:-4] if repo_url.endswith('.git') else repo_url
+    # Handle SSH format (git@host:user/repo)
+    if '@' in repo_url and ':' in repo_url:
+        repo_url = repo_url.split(':')[-1]
+    return Path(repo_url).name

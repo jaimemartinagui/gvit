@@ -6,7 +6,7 @@ import sys
 
 import typer
 
-from gvit.commands.pull import pull
+# from gvit.commands.pull import pull
 from gvit.commands.clone import clone
 from gvit.commands.config import config
 from gvit.options.cli import version_option
