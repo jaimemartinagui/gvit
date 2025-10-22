@@ -122,13 +122,13 @@ def remove_extra_deps(
 
     if key not in config_data["deps"]:
         typer.secho(f'Dependency group "{key}" not found.', fg=typer.colors.YELLOW)
-        available_keys = [k for k in config_data["deps"].keys() if k not in ["install", "base"]]
+        available_keys = [k for k in config_data["deps"].keys() if k != "base"]
         if available_keys:
             typer.echo(f"\nAvailable dependency groups: {available_keys}.")
         return None
 
-    if key in ["install", "base"]:
-        typer.secho(f"Cannot remove '{key}' - reserved dependency setting.", fg=typer.colors.RED)
+    if key == "base":
+        typer.secho("Cannot remove 'base' - reserved dependency setting.", fg=typer.colors.RED)
         return None
 
     removed_value = config_data["deps"].pop(key)

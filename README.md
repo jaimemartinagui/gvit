@@ -52,6 +52,7 @@ gvit clone https://github.com/someone/project.git
 * 📦 **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths
 * 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files
 * 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`)
+* 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes
 * ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
 * 🐍 **Conda backend support** (venv and virtualenv coming soon)
@@ -132,6 +133,19 @@ gvit config remove-extra-deps dev
 gvit config show
 ```
 
+### Environment Management
+
+```bash
+# List all tracked environments
+gvit envs list
+
+# Show details of a specific environment
+gvit envs show my-env
+
+# Remove an environment from registry
+gvit envs delete my-env
+```
+
 ---
 
 ## 🧠 How it works
@@ -150,7 +164,11 @@ gvit config show
    - `pyproject.toml` (with optional extras support)
    - `requirements.txt` or custom paths
    - Multiple dependency groups (base, dev, test, etc.)
-6. **Validates and handles conflicts**: 
+6. **Tracks environment in registry**:
+   - Saves environment metadata to `~/.config/gvit/envs/{env_name}.toml`
+   - Records dependency file hashes for change detection
+   - Stores repository information (path, URL)
+7. **Validates and handles conflicts**: 
    - Detects existing environments
    - Offers options: rename, overwrite, or abort
    - Auto-generates unique names if needed
@@ -175,6 +193,31 @@ test = "requirements-test.txt"
 
 [backends.conda]
 path = "/path/to/conda"  # Optional: custom conda path
+```
+
+### Environment Registry
+
+Environment tracking: `~/.config/gvit/envs/{env_name}.toml`
+
+```toml
+[environment]
+name = "my-project"
+backend = "conda"
+python = "3.11"
+created_at = "2025-01-22T20:53:01.123456"
+
+[repository]
+path = "/Users/user/projects/my-project"
+url = "https://github.com/user/my-project.git"
+
+[deps]
+base = "requirements.txt"
+dev = "requirements-dev.txt"
+
+[deps.installed]
+base_hash = "a1b2c3d4e5f6g7h8"  # SHA256 hash for change detection
+dev_hash = "i9j0k1l2m3n4o5p6"
+installed_at = "2025-01-22T20:53:15.789012"
 ```
 
 ### Repository Configuration
@@ -209,9 +252,11 @@ base = "pyproject.toml"
 gvit/
 ├── src/gvit/
 │   ├── cli.py              # CLI entry point (Typer app)
+│   ├── env_registry.py     # Environment registry management
 │   ├── commands/
 │   │   ├── clone.py        # Clone command logic
-│   │   └── config.py       # Config management commands
+│   │   ├── config.py       # Config management commands
+│   │   └── envs.py         # Environment management commands
 │   ├── backends/
 │   │   └── conda.py        # Conda backend implementation
 │   ├── utils/
@@ -219,7 +264,7 @@ gvit/
 │   │   ├── utils.py        # Helper functions
 │   │   ├── validators.py   # Input validation
 │   │   ├── globals.py      # Constants and defaults
-│   │   └── schemas.py      # Type definitions
+│   │   └── schemas.py      # Type definitions (TypedDict)
 │   └── __init__.py
 └── pyproject.toml          # Project metadata
 ```
@@ -235,19 +280,22 @@ gvit/
 | **Clone command** | ✅ | Full repository cloning with environment setup |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
+| **Environment registry** | ✅ | Track environments with metadata and dependency hashes |
+| **Environment management** | ✅ | `list`, `show`, `delete` commands for tracked environments |
 | **Dependency resolution** | ✅ | Priority-based resolution (CLI > repo > local > default) |
 | **pyproject.toml support** | ✅ | Install base + optional dependencies (extras) |
 | **Requirements.txt support** | ✅ | Standard pip requirements files |
 | **Custom dependency paths** | ✅ | Flexible path specification via config or CLI |
 | **Environment validation** | ✅ | Detect conflicts, offer resolution options |
+| **TypedDict schemas** | ✅ | Full type safety with typed configuration schemas |
 
 ### Next Releases
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| **0.1.0** | 🔧 In Progress | Add `pull` and `checkout` commands with smart dependency sync |
-| **0.2.0** | 📋 Planned | Support for `venv` and `virtualenv` backends |
-| **0.3.0** | 📋 Planned | Environment persistence and metadata tracking |
+| **0.1.0** | 🔧 In Progress | Add `pull` command with smart dependency sync using registry |
+| **0.2.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
+| **0.3.0** | 📋 Planned | Support for `venv` and `virtualenv` backends |
 | **0.4.0** | 📋 Planned | Shell integration and aliases |
 | **1.0.0** | 🎯 Goal | Stable release with all core features |
 
@@ -306,13 +354,26 @@ gvit clone https://github.com/user/project.git --extra-deps dev,test
 
 ```bash
 # Override everything from CLI
-gvit clone https://github.com/user/project.git \
-  --venv-name custom-env \
-  --python 3.12 \
-  --backend conda \
-  --base-deps requirements/prod.txt \
-  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt \
+gvit clone https://github.com/user/project.git \\
+  --venv-name custom-env \\
+  --python 3.12 \\
+  --backend conda \\
+  --base-deps requirements/prod.txt \\
+  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt \\
   --verbose
+```
+
+### Managing Tracked Environments
+
+```bash
+# See all environments gvit knows about
+gvit envs list
+
+# Check environment details (shows registry file with syntax highlighting)
+gvit envs show my-project
+
+# Clean up registry (doesn't delete the actual conda env)
+gvit envs delete old-project
 ```
 
 ---

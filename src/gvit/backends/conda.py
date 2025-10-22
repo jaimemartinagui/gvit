@@ -82,13 +82,13 @@ class CondaBackend:
         project_dir: Path,
         extras: list[str] | None = None,
         verbose: bool = False
-    ) -> None:
+    ) -> bool:
         """Method to install the dependencies from the provided deps_path."""
         typer.echo(f'  Dependency group "{deps_group_name}"...', nl=False)
         deps_path = deps_path if deps_path.is_absolute() else project_dir / deps_path
         if not deps_path.exists():
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
-            return None
+            return False
 
         if deps_path.name == "pyproject.toml":
             install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-e"]
@@ -97,7 +97,7 @@ class CondaBackend:
             install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-r", str(deps_path)]
         else:
             typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
-            return None
+            return False
 
         try:
             result = subprocess.run(
@@ -110,8 +110,10 @@ class CondaBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
             typer.echo("✅")
+            return True
         except subprocess.CalledProcessError as e:
             typer.secho(f'❗ Failed to install "{deps_path}" dependencies: {e}', fg=typer.colors.RED)
+            return False
 
     def environment_exists(self, venv_name: str) -> bool:
         """Check if a conda environment with the given name already exists."""
