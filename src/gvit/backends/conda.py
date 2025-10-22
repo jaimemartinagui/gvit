@@ -3,7 +3,6 @@ Module with the Conda backend class.
 """
 
 from pathlib import Path
-from typing import Optional
 import shutil
 import platform
 import os
@@ -76,7 +75,13 @@ class CondaBackend:
         return venv_name
 
     def install_dependencies(
-        self, venv_name: str, deps_group_name: str, deps_path: Path, project_dir: Path, verbose: bool = False
+        self,
+        venv_name: str,
+        deps_group_name: str,
+        deps_path: Path,
+        project_dir: Path,
+        extras: list[str] | None = None,
+        verbose: bool = False
     ) -> None:
         """Method to install the dependencies from the provided deps_path."""
         typer.echo(f'  Dependency group "{deps_group_name}"...', nl=False)
@@ -86,7 +91,8 @@ class CondaBackend:
             return None
 
         if deps_path.name == "pyproject.toml":
-            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-e", "."]
+            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-e"]
+            install_cmd.append(f".[{','.join(extras)}]" if extras else ".")
         elif deps_path.suffix in [".txt", ".in"]:
             install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-r", str(deps_path)]
         else:

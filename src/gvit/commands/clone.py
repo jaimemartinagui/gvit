@@ -2,7 +2,6 @@
 Module for the "gvit clone" command.
 """
 
-import time
 import subprocess
 from pathlib import Path
 
@@ -20,7 +19,7 @@ from gvit.utils.utils import (
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.backends.conda import CondaBackend
-from gvit.utils.globals import SUPPORTED_BACKENDS, FAKE_SLEEP_TIME
+from gvit.utils.globals import SUPPORTED_BACKENDS
 from gvit.utils.schemas import LocalConfig, RepoConfig
 
 
@@ -120,13 +119,22 @@ def _install_dependencies(
     """
     typer.echo("\n- Resolving dependencies...")
     base_deps = _resolve_base_deps(base_deps, repo_config, local_config)
+
+    if "pyproject.toml" in base_deps:
+        extra_deps_ = extra_deps.split(",") if extra_deps else None
+        typer.echo(f'  Dependencies to install: pyproject.toml{f" (extras: {extra_deps})" if extra_deps else ""}')
+        typer.echo("\n- Installing project and dependencies...")
+        deps_group_name = f"base (extras: {extra_deps})" if extra_deps else "base"
+        _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, base_deps, extra_deps_, verbose)
+        return None
+
     extra_deps_ = _resolve_extra_deps(extra_deps, repo_config, local_config)
     deps_to_install = {**{"base": base_deps}, **extra_deps_}
     typer.echo(f"  Dependencies to install: {deps_to_install}")
     typer.echo("\n- Installing dependencies...")
-    _install_dependencies_from_file(venv_name, backend, project_dir, "base", base_deps, verbose)
+    _install_dependencies_from_file(venv_name, backend, project_dir, "base", base_deps, verbose=verbose)
     for deps_group_name, deps_path in extra_deps_.items():
-        _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, deps_path, verbose)
+        _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, deps_path, verbose=verbose)
 
 
 def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
@@ -160,7 +168,7 @@ def _resolve_extra_deps(
             if path := (repo_extra_deps.get(item) or local_extra_deps.get(item)):
                 extras[item] = path
             else:
-                typer.secho(f'  ⚠️  Extra dep "{item}" not found in configs, skipping.', fg=typer.colors.YELLOW)
+                typer.secho(f'  ⚠️  Extra deps group "{item}" not found in configs, skipping.', fg=typer.colors.YELLOW)
 
     return extras
 
@@ -171,7 +179,8 @@ def _install_dependencies_from_file(
     project_dir: str,
     deps_group_name: str,
     deps_path: str,
-    verbose: bool
+    extra_deps: list[str] | None = None,
+    verbose: bool = False
 ) -> None:
     """Install dependencies from a single file."""
     project_path = Path(project_dir).resolve()
@@ -179,7 +188,7 @@ def _install_dependencies_from_file(
     deps_abs_path = deps_path_ if deps_path_.is_absolute() else project_path / deps_path_
     if backend == "conda":
         conda_backend = CondaBackend()
-        conda_backend.install_dependencies(venv_name, deps_group_name, deps_abs_path, project_path, verbose)
+        conda_backend.install_dependencies(venv_name, deps_group_name, deps_abs_path, project_path, extra_deps, verbose)
 
 
 def _show_summary_message(venv_name: str, backend: str, project_dir: str) -> None:
