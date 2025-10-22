@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gvit"
-version = "0.0.2"
+version = "0.0.3"
 description = "Automates virtual environment management for Git repositories"
 readme = "README.md"
 requires-python = ">=3.10"
