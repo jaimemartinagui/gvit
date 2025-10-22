@@ -1,7 +1,20 @@
 
-# 🧩 gvit
+```
+                      ░██   ░██    
+                            ░██    
+ ░████████ ░██    ░██ ░██░████████ 
+░██    ░██ ░██    ░██ ░██   ░██    
+░██    ░██  ░██  ░██  ░██   ░██    
+░██   ░███   ░██░██   ░██   ░██    
+ ░█████░██    ░███    ░██    ░████ 
+       ░██                         
+ ░███████                          
 
-> **Automates virtual environment management for Git repositories.**
+
+Git-aware Virtual Environment Manager
+```
+
+**Automates virtual environment management for Git repositories.**
 
 `gvit` is a command-line tool that automatically creates and manages virtual environments when you clone repositories. Its goal is to eliminate friction between **version control** and **Python environment management**.
 
@@ -27,6 +40,10 @@ gvit clone https://github.com/someone/project.git
 
 🎉 Repository cloned, environment created, and dependencies installed!
 
+### Example
+
+![gvit clone example](assets/img/example.png)
+
 ---
 
 ## ⚙️ What `gvit` does
@@ -42,8 +59,6 @@ gvit clone https://github.com/someone/project.git
 ---
 
 ## 💻 Installation
-
-> *The package is called `gvit` on PyPI, but the command is `gvit`.*
 
 ```bash
 pip install gvit
@@ -200,6 +215,7 @@ gvit/
 │   ├── backends/
 │   │   └── conda.py        # Conda backend implementation
 │   ├── utils/
+│   │   ├── exceptions.py   # Custom exceptions
 │   │   ├── utils.py        # Helper functions
 │   │   ├── validators.py   # Input validation
 │   │   ├── globals.py      # Constants and defaults
@@ -212,7 +228,7 @@ gvit/
 
 ## 🧭 Roadmap
 
-### Current Release (v0.0.2)
+### Current Release (v0.0.3)
 
 | Feature | Status | Description |
 |---------|--------|-------------|
