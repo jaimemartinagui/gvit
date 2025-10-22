@@ -13,10 +13,9 @@ from gvit.utils.utils import (
     ensure_local_config_dir,
     load_local_config,
     save_local_config,
-    get_default_backend,
-    get_default_python,
-    get_default_install_deps,
-    get_default_base_deps
+    get_backend,
+    get_python,
+    get_base_deps
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.utils.schemas import LocalConfig
@@ -27,7 +26,6 @@ from gvit.backends.conda import CondaBackend
 def setup(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Default Python version."),
-    install_deps: bool = typer.Option(None, "--install-deps", "-i", help="Default install-deps in the virtual environment."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Default base dependencies path (relative to repository root path)."),
 ) -> None:
     """
@@ -43,7 +41,7 @@ def setup(
     if backend is None:
         backend = typer.prompt(
             f"- Select default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})",
-            default=get_default_backend(config),
+            default=get_backend(config),
         ).strip()
     validate_backend(backend)
     conda_path = None
@@ -60,25 +58,17 @@ def setup(
     if python is None:
         python = typer.prompt(
             f"- Select default Python version",
-            default=get_default_python(config),
+            default=get_python(config),
         ).strip()
     validate_python(python)
-
-    if install_deps is None:
-        default_install_deps = get_default_install_deps(config)
-        install_deps = typer.confirm(
-            f"- Enable default install-deps (Y/n)? [{'Y' if default_install_deps else "n"}]",
-            default=default_install_deps,
-            show_default=False
-        )
 
     if base_deps is None:
         base_deps = typer.prompt(
             f"- Select default dependencies path",
-            default=get_default_base_deps(config),
+            default=get_base_deps(config),
         ).strip()
 
-    config = _get_updated_local_config(backend, python, install_deps, base_deps, conda_path)
+    config = _get_updated_local_config(backend, python, base_deps, conda_path)
 
     typer.secho("\nSaving configuration...", nl=False, fg=typer.colors.GREEN)
     save_local_config(config)
@@ -207,7 +197,7 @@ def show() -> None:
 
 
 def _get_updated_local_config(
-    backend: str, python: str, install_deps: bool, base_deps: str, conda_path: str | None
+    backend: str, python: str, base_deps: str, conda_path: str | None
 ) -> LocalConfig:
     """Function to build the local configuration file."""
     gvit_config = {
@@ -218,7 +208,6 @@ def _get_updated_local_config(
     }
     deps_config = {
         "deps": {
-            "install": install_deps,
             "base": base_deps,
         }
     }

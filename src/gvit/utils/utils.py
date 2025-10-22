@@ -11,11 +11,10 @@ import toml
 from gvit.utils.globals import (
     LOCAL_CONFIG_DIR,
     LOCAL_CONFIG_FILE,
+    REPO_CONFIG_FILE,
     DEFAULT_BACKEND,
     DEFAULT_PYTHON,
-    DEFAULT_INSTALL_DEPS,
-    DEFAULT_DEPS_PATH,
-    REPO_CONFIG_FILE,
+    DEFAULT_BASE_DEPS,
     DEFAULT_VERBOSE
 )
 from gvit.utils.schemas import LocalConfig, RepoConfig
@@ -69,33 +68,29 @@ def save_local_config(config: LocalConfig) -> None:
         toml.dump(config, f)
 
 
-def get_default_backend(config: LocalConfig | None = None) -> str:
-    """Function to get the default backend from the local config."""
-    config = config or load_local_config()
+def get_backend(config: LocalConfig) -> str:
+    """Function to get the backend from the config."""
     return config.get("gvit", {}).get("backend", DEFAULT_BACKEND)
 
 
-def get_default_python(config: LocalConfig | None = None) -> str:
-    """Function to get the default python version from the local config."""
-    config = config or load_local_config()
+def get_python(config: LocalConfig | RepoConfig) -> str:
+    """Function to get the python version from the config."""
     return config.get("gvit", {}).get("python", DEFAULT_PYTHON)
 
 
-def get_default_install_deps(config: LocalConfig | None = None) -> bool:
-    """Function to get the default install_deps from the local config."""
-    config = config or load_local_config()
-    return config.get("deps", {}).get("install", DEFAULT_INSTALL_DEPS)
+def get_base_deps(config: LocalConfig | RepoConfig) -> str:
+    """Function to get the base deps from the config."""
+    return config.get("deps", {}).get("base", DEFAULT_BASE_DEPS)
 
 
-def get_default_base_deps(config: LocalConfig | None = None) -> str:
-    """Function to get the default base deps from the local config."""
-    config = config or load_local_config()
-    return config.get("deps", {}).get("base", DEFAULT_DEPS_PATH)
+def get_extra_deps(config: LocalConfig | RepoConfig) -> dict:
+    """Function to get the extra deps from the config."""
+    deps = config.get("deps")
+    return {k: v for k, v in deps.items() if k != "base"} if deps else {}
 
 
-def get_default_verbose(config: LocalConfig | None = None) -> bool:
-    """Function to get the default verbose from the local config."""
-    config = config or load_local_config()
+def get_verbose(config: LocalConfig) -> bool:
+    """Function to get the verbose from the config."""
     return config.get("gvit", {}).get("verbose", DEFAULT_VERBOSE)
 
 

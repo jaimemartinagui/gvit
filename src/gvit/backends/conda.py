@@ -44,7 +44,7 @@ class CondaBackend:
         except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
             return False
 
-    def create_venv(self, venv_name: str, python: str, force: bool, verbose: bool) -> str:
+    def create_venv(self, venv_name: str, python: str, force: bool, verbose: bool = False) -> str:
         """
         Function to create the virtual environment using conda.
         It handles the case where an environment with the same name already exists.
@@ -67,7 +67,7 @@ class CondaBackend:
                     venv_name = self.get_unique_environment_name(venv_name)
                     typer.echo(f'  Using environment name "{venv_name}"...', nl=False)
                 case 2:
-                    typer.secho(f'  Removing old environment "{venv_name}"...', nl=False, fg=typer.colors.YELLOW)
+                    typer.echo(f'  Overwriting environment "{venv_name}" (this might take some time)...', nl=False)
                     self.remove_environment(venv_name, verbose)
                 case _:
                     typer.secho("  Aborted.", fg=typer.colors.RED)
@@ -75,67 +75,24 @@ class CondaBackend:
         self._create_venv(venv_name, python, verbose)
         return venv_name
 
-    def install_deps(self, venv_name: str, project_dir: str, repo_config: dict, extra_deps: Optional[str] = None, verbose: bool = False) -> None:
-        """Install dependencies using simple pip-based approach."""
-        project_path = Path(project_dir)
-        
-        # Get dependency configuration from repo config
-        deps_config = repo_config.get("deps", {})
-        
-        # List of dependency files to install
-        dep_files = []
-        
-        # Always install base dependencies if available
-        if "base" in deps_config:
-            base_path = project_path / deps_config["base"]
-            if base_path.exists():
-                dep_files.append(("base", base_path))
-            elif verbose:
-                typer.secho(f"Warning: Base dependency file not found: {deps_config['base']}", fg=typer.colors.YELLOW)
-        
-        # Install extra dependencies if requested
-        if extra_deps:
-            extra_list = [dep.strip() for dep in extra_deps.split(",")]
-            for extra_name in extra_list:
-                if extra_name in deps_config:
-                    extra_path = project_path / deps_config[extra_name]
-                    if extra_path.exists():
-                        dep_files.append((extra_name, extra_path))
-                    elif verbose:
-                        typer.secho(f"Warning: Extra dependency file not found: {deps_config[extra_name]} ({extra_name})", fg=typer.colors.YELLOW)
-                else:
-                    typer.secho(f"Warning: Unknown extra dependency group: {extra_name}", fg=typer.colors.YELLOW)
-        
-        # Fallback to common files if no deps config and no dep files found
-        if not dep_files and not deps_config:
-            for fallback_file in ["requirements.txt", "pyproject.toml"]:
-                fallback_path = project_path / fallback_file
-                if fallback_path.exists():
-                    dep_files.append(("auto-detected", fallback_path))
-                    break
-        
-        # Install each dependency file
-        for dep_name, dep_path in dep_files:
-            self._install_single_dep_file(venv_name, dep_name, dep_path, project_dir, verbose)
-    
-    def _install_single_dep_file(self, venv_name: str, dep_name: str, dep_path: Path, project_dir: str, verbose: bool) -> None:
-        """Install dependencies from a single file."""
-        typer.echo(f"📦 Installing {dep_name} dependencies from {dep_path.name}")
-        
-        # Determine install command based on file type
-        if dep_path.name == "pyproject.toml":
-            # Install project in editable mode
+    def install_dependencies(
+        self, venv_name: str, deps_group_name: str, deps_path: Path, project_dir: Path, verbose: bool = False
+    ) -> None:
+        """Method to install the dependencies from the provided deps_path."""
+        typer.echo(f'  Dependency group "{deps_group_name}"...', nl=False)
+        deps_path = deps_path if deps_path.is_absolute() else project_dir / deps_path
+        if not deps_path.exists():
+            typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
+            return None
+
+        if deps_path.name == "pyproject.toml":
             install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-e", "."]
-        elif dep_path.suffix in [".txt", ".in"]:
-            # Install from requirements file
-            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-r", str(dep_path)]
+        elif deps_path.suffix in [".txt", ".in"]:
+            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-r", str(deps_path)]
         else:
-            typer.secho(f"Unsupported dependency file format: {dep_path.name}", fg=typer.colors.RED)
-            return
-        
-        if verbose:
-            typer.echo(f"Command: {' '.join(install_cmd)}")
-        
+            typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
+            return None
+
         try:
             result = subprocess.run(
                 install_cmd,
@@ -144,13 +101,11 @@ class CondaBackend:
                 text=True,
                 cwd=project_dir
             )
-            
             if verbose and result.stdout:
                 typer.echo(result.stdout)
-                
+            typer.echo("✅")
         except subprocess.CalledProcessError as e:
-            typer.secho(f"Failed to install {dep_name} dependencies:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            typer.secho(f'❗ Failed to install "{deps_path}" dependencies: {e}', fg=typer.colors.RED)
 
     def environment_exists(self, venv_name: str) -> bool:
         """Check if a conda environment with the given name already exists."""
