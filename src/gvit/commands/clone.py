@@ -13,7 +13,7 @@ from gvit.utils.utils import (
     get_default_backend,
     get_default_python,
     get_default_install_deps,
-    get_default_deps_path,
+    get_default_base_deps,
     get_default_verbose,
     extract_repo_name_from_url,
 )
@@ -30,7 +30,7 @@ def clone(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Python version."),
     install_deps: bool = typer.Option(None, "--install-deps", "-i", help="Install dependencies in the virtual environment."),
-    deps_path: str = typer.Option(None, "--deps-path", "-d", help="Path where to look for the dependencies (relative to repository root path)."),
+    base_deps: str = typer.Option(None, "--base-deps", "-d", help="Path where to look for the base dependencies (relative to repository root path)."),
     force: bool = typer.Option(False, "--force", "-f", is_flag=True, help="Overwrite existing environment without confirmation."),
     verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output."),
     # extra_deps_option = typer.Option(None, "--extra-deps", help="Comma-separated list of extra dependency groups to install (e.g. dev,test,docs).")
@@ -68,8 +68,8 @@ def clone(
     # 5. Install dependencies
     install_deps = install_deps or get_default_install_deps(local_config)
     if install_deps:
-        deps_path = deps_path or repo_config.get("deps", {}).get("base") or get_default_deps_path(local_config)
-        _install_deps(venv_name, backend, deps_path, target_dir, verbose)
+        base_deps = base_deps or repo_config.get("deps", {}).get("base") or get_default_base_deps(local_config)
+        _install_deps(venv_name, backend, base_deps, target_dir, verbose)
 
     # 6. Summary message
     _show_summary_message(venv_name, backend, target_dir)
@@ -104,11 +104,11 @@ def _create_venv(venv_name: str, backend: str, python: str, force: bool, verbose
 
 
 def _install_deps(
-    venv_name: str, backend: str, deps_path: str, target_dir: str, verbose: bool
+    venv_name: str, backend: str, base_deps: str, target_dir: str, verbose: bool
 ) -> None:
     """Function to install the dependencies in the virtual environment."""
     typer.echo("\n- Installing dependencies...", nl=False)
-    deps_abs_path = Path(target_dir).resolve() / deps_path
+    deps_abs_path = Path(target_dir).resolve() / base_deps
     if not deps_abs_path.exists():
         typer.secho("Dependencies could not be retrieved!", fg=typer.colors.RED)
         return None

@@ -87,8 +87,8 @@ def get_default_install_deps(config: LocalConfig | None = None) -> bool:
     return config.get("deps", {}).get("install", DEFAULT_INSTALL_DEPS)
 
 
-def get_default_deps_path(config: LocalConfig | None = None) -> str:
-    """Function to get the default deps_path from the local config."""
+def get_default_base_deps(config: LocalConfig | None = None) -> str:
+    """Function to get the default base deps from the local config."""
     config = config or load_local_config()
     return config.get("deps", {}).get("base", DEFAULT_DEPS_PATH)
 

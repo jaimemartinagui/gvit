@@ -16,7 +16,7 @@ from gvit.utils.utils import (
     get_default_backend,
     get_default_python,
     get_default_install_deps,
-    get_default_deps_path
+    get_default_base_deps
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.utils.schemas import LocalConfig
@@ -28,12 +28,12 @@ def setup(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Default Python version."),
     install_deps: bool = typer.Option(None, "--install-deps", "-i", help="Default install-deps in the virtual environment."),
-    deps_path: str = typer.Option(None, "--deps-path", "-d", help="Default dependencies path (relative to repository root path)."),
+    base_deps: str = typer.Option(None, "--base-deps", "-d", help="Default base dependencies path (relative to repository root path)."),
 ) -> None:
     """
     Configure gvit and generate ~/.config/gvit/config.toml configuration file.
 
-    It defines the defaults options to be used if not provided in the different commands or in the repository config.
+    It defines the DEFAULT options to be used if not provided in the different commands or in the repository config.
 
     Omitted options will be requested via interactive prompts.
     """
@@ -72,13 +72,13 @@ def setup(
             show_default=False
         )
 
-    if deps_path is None:
-        deps_path = typer.prompt(
+    if base_deps is None:
+        base_deps = typer.prompt(
             f"- Select default dependencies path",
-            default=get_default_deps_path(config),
+            default=get_default_base_deps(config),
         ).strip()
 
-    config = _get_updated_local_config(backend, python, install_deps, deps_path, conda_path)
+    config = _get_updated_local_config(backend, python, install_deps, base_deps, conda_path)
 
     typer.secho("\nSaving configuration...", nl=False, fg=typer.colors.GREEN)
     save_local_config(config)
@@ -207,7 +207,7 @@ def show() -> None:
 
 
 def _get_updated_local_config(
-    backend: str, python: str, install_deps: bool, deps_path: str, conda_path: str | None
+    backend: str, python: str, install_deps: bool, base_deps: str, conda_path: str | None
 ) -> LocalConfig:
     """Function to build the local configuration file."""
     gvit_config = {
@@ -219,7 +219,7 @@ def _get_updated_local_config(
     deps_config = {
         "deps": {
             "install": install_deps,
-            "base": deps_path,
+            "base": base_deps,
         }
     }
     backends_config = {
