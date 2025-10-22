@@ -8,6 +8,7 @@ from pathlib import Path
 
 LOCAL_CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "gvit"
 LOCAL_CONFIG_FILE = LOCAL_CONFIG_DIR / "config.toml"
+ENVS_DIR = LOCAL_CONFIG_DIR / "envs"
 REPO_CONFIG_FILE = ".gvit.toml"
 FAKE_SLEEP_TIME = 0.75
 

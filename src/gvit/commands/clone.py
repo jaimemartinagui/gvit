@@ -18,6 +18,7 @@ from gvit.utils.utils import (
     extract_repo_name_from_url,
 )
 from gvit.utils.validators import validate_backend, validate_python
+# from gvit.env_registry import save_envsironment_info
 from gvit.backends.conda import CondaBackend
 from gvit.utils.globals import SUPPORTED_BACKENDS
 from gvit.utils.schemas import LocalConfig, RepoConfig
@@ -66,12 +67,28 @@ def clone(
     venv_name = _create_venv(venv_name, backend, python, force, verbose)
 
     # 5. Install dependencies
+    resolved_base_deps = None
+    resolved_extra_deps = {}
+    
     if no_deps:
         typer.echo("\n- Skipping dependency installation...")
     else:
-        _install_dependencies(venv_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose)
+        resolved_base_deps, resolved_extra_deps = _install_dependencies(
+            venv_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
+        )
 
-    # 6. Summary message
+    # 6. Save environment info to registry
+    # save_environment_info(
+    #     venv_name=venv_name,
+    #     repo_path=target_dir,
+    #     repo_url=repo_url,
+    #     backend=backend,
+    #     python=python,
+    #     base_deps=resolved_base_deps,
+    #     extra_deps=resolved_extra_deps
+    # )
+
+    # 7. Summary message
     _show_summary_message(venv_name, backend, target_dir)
 
 
@@ -112,29 +129,35 @@ def _install_dependencies(
     repo_config: RepoConfig,
     local_config: LocalConfig,
     verbose: bool
-) -> None:
+) -> tuple[str | None, dict[str, str]]:
     """
     Install dependencies with priority resolution system.
     Priority: CLI > Repo Config > Local Config > Default
+    
+    Returns:
+        Tuple of (resolved_base_deps, resolved_extra_deps_dict)
     """
     typer.echo("\n- Resolving dependencies...")
-    base_deps = _resolve_base_deps(base_deps, repo_config, local_config)
+    resolved_base = _resolve_base_deps(base_deps, repo_config, local_config)
 
-    if "pyproject.toml" in base_deps:
+    if "pyproject.toml" in resolved_base:
         extra_deps_ = extra_deps.split(",") if extra_deps else None
         typer.echo(f'  Dependencies to install: pyproject.toml{f" (extras: {extra_deps})" if extra_deps else ""}')
         typer.echo("\n- Installing project and dependencies...")
         deps_group_name = f"base (extras: {extra_deps})" if extra_deps else "base"
-        _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, base_deps, extra_deps_, verbose)
-        return None
+        _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, resolved_base, extra_deps_, verbose)
+        # For pyproject.toml, extras are included in base, so return empty extra_deps dict
+        return (resolved_base, {})
 
-    extra_deps_ = _resolve_extra_deps(extra_deps, repo_config, local_config)
-    deps_to_install = {**{"base": base_deps}, **extra_deps_}
+    resolved_extras = _resolve_extra_deps(extra_deps, repo_config, local_config)
+    deps_to_install = {**{"base": resolved_base}, **resolved_extras}
     typer.echo(f"  Dependencies to install: {deps_to_install}")
     typer.echo("\n- Installing dependencies...")
-    _install_dependencies_from_file(venv_name, backend, project_dir, "base", base_deps, verbose=verbose)
-    for deps_group_name, deps_path in extra_deps_.items():
+    _install_dependencies_from_file(venv_name, backend, project_dir, "base", resolved_base, verbose=verbose)
+    for deps_group_name, deps_path in resolved_extras.items():
         _install_dependencies_from_file(venv_name, backend, project_dir, deps_group_name, deps_path, verbose=verbose)
+    
+    return (resolved_base, resolved_extras)
 
 
 def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
