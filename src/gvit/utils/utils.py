@@ -7,7 +7,6 @@ import importlib.metadata
 from pathlib import Path
 
 import toml
-import typer
 
 from gvit.utils.globals import (
     LOCAL_CONFIG_DIR,
@@ -60,8 +59,7 @@ def load_repo_config(repo_path: str) -> RepoConfig:
         return cast(RepoConfig, toml.load(config_file_path))
     pyproject_path = Path(repo_path) / "pyproject.toml"
     if pyproject_path.exists():
-        gvit_config = toml.load(pyproject_path).get("tool", {}).get("gvit", {})
-        return {"gvit": gvit_config}
+        return {"gvit": toml.load(pyproject_path).get("tool", {}).get("gvit", {})}
     return {}
 
 
@@ -69,37 +67,36 @@ def save_local_config(config: LocalConfig) -> None:
     """Method to save the local configuration file."""
     with open(LOCAL_CONFIG_FILE, "w") as f:
         toml.dump(config, f)
-    typer.secho(f"\nConfiguration saved -> {LOCAL_CONFIG_FILE}", fg=typer.colors.GREEN)
 
 
 def get_default_backend(config: LocalConfig | None = None) -> str:
     """Function to get the default backend from the local config."""
     config = config or load_local_config()
-    return config.get("defaults", {}).get("backend", DEFAULT_BACKEND)
+    return config.get("gvit", {}).get("backend", DEFAULT_BACKEND)
 
 
 def get_default_python(config: LocalConfig | None = None) -> str:
     """Function to get the default python version from the local config."""
     config = config or load_local_config()
-    return config.get("defaults", {}).get("python", DEFAULT_PYTHON)
+    return config.get("gvit", {}).get("python", DEFAULT_PYTHON)
 
 
 def get_default_install_deps(config: LocalConfig | None = None) -> bool:
     """Function to get the default install_deps from the local config."""
     config = config or load_local_config()
-    return config.get("defaults", {}).get("install_deps", DEFAULT_INSTALL_DEPS)
+    return config.get("deps", {}).get("install", DEFAULT_INSTALL_DEPS)
 
 
 def get_default_deps_path(config: LocalConfig | None = None) -> str:
     """Function to get the default deps_path from the local config."""
     config = config or load_local_config()
-    return config.get("defaults", {}).get("deps_path", DEFAULT_DEPS_PATH)
+    return config.get("deps", {}).get("base", DEFAULT_DEPS_PATH)
 
 
 def get_default_verbose(config: LocalConfig | None = None) -> bool:
     """Function to get the default verbose from the local config."""
     config = config or load_local_config()
-    return config.get("defaults", {}).get("verbose", DEFAULT_VERBOSE)
+    return config.get("gvit", {}).get("verbose", DEFAULT_VERBOSE)
 
 
 def extract_repo_name_from_url(repo_url: str) -> str:

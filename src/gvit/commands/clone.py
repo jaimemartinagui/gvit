@@ -7,16 +7,6 @@ from pathlib import Path
 
 import typer
 
-from gvit.options.clone import (
-    target_dir_option,
-    venv_name_option,
-    backend_option,
-    python_option,
-    install_deps_option,
-    deps_path_option,
-    force_option,
-    verbose_option,
-)
 from gvit.utils.utils import (
     load_local_config,
     load_repo_config,
@@ -29,19 +19,22 @@ from gvit.utils.utils import (
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.backends.conda import CondaBackend
+from gvit.utils.globals import SUPPORTED_BACKENDS
 
 
 def clone(
     ctx: typer.Context,
-    repo_url: str,
-    target_dir: str = target_dir_option,
-    venv_name: str = venv_name_option,
-    backend: str = backend_option,
-    python: str = python_option,
-    install_deps: bool = install_deps_option,
-    deps_path: str = deps_path_option,
-    force: bool = force_option,
-    verbose: bool = verbose_option,
+    repo_url: str = typer.Argument(help="Repository URL."),
+    target_dir: str = typer.Option(None, "--target-dir", "-t", help="Directory to clone into."),
+    venv_name: str = typer.Option(None, "--venv-name", "-n", help="Name of the virtual environment to create."),
+    backend: str = typer.Option(None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
+    python: str = typer.Option(None, "--python", "-p", help="Python version."),
+    install_deps: bool = typer.Option(None, "--install-deps", "-i", help="Install dependencies in the virtual environment."),
+    deps_path: str = typer.Option(None, "--deps-path", "-d", help="Path where to look for the dependencies (relative to repository root path)."),
+    force: bool = typer.Option(False, "--force", "-f", is_flag=True, help="Overwrite existing environment without confirmation."),
+    verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output."),
+    # extra_deps_option = typer.Option(None, "--extra-deps", help="Comma-separated list of extra dependency groups to install (e.g. dev,test,docs).")
+    # no_deps_option = typer.Option(False, "--no-deps", is_flag=True, help="Skip dependency installation.")
 ) -> None:
     """
     Clone a repository and create a virtual environment.
@@ -75,7 +68,7 @@ def clone(
     # 5. Install dependencies
     install_deps = install_deps or get_default_install_deps(local_config)
     if install_deps:
-        deps_path = deps_path or repo_config.get("gvit", {}).get("deps_path") or get_default_deps_path(local_config)
+        deps_path = deps_path or repo_config.get("deps", {}).get("base") or get_default_deps_path(local_config)
         _install_deps(venv_name, backend, deps_path, target_dir, verbose)
 
     # 6. Summary message
@@ -130,9 +123,8 @@ def _show_summary_message(venv_name: str, backend: str, target_dir: str) -> None
     if backend == 'conda':
         conda_backend = CondaBackend()
         activate_cmd = conda_backend.get_activate_cmd(venv_name)
-    combined_cmd = f'cd {target_dir} && {activate_cmd}'
     typer.echo("\n🎉  Project setup complete!")
     typer.echo(f"📁  Repository -> {target_dir}")
     typer.echo(f"🐍  Environment ({backend}) -> {venv_name}")
     typer.echo("🚀  Ready to start working -> ", nl=False)
-    typer.secho(f"{combined_cmd}", fg=typer.colors.YELLOW, bold=True)
+    typer.secho(f'cd {target_dir} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
