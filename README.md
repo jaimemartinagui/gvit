@@ -48,11 +48,13 @@ gvit clone https://github.com/someone/project.git
 
 ## ⚙️ What `gvit` does
 
-* 🪄 **Automatically creates a virtual environment** when cloning a repo
+* 🪄 **Automatically creates environments** when cloning or initializing repos
 * 📦 **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths
 * 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files
 * 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`)
 * 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes
+* 🧼 **Cleans orphaned environments** automatically with `prune` command
+* 🌳 **Visual command tree** to explore available commands
 * ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
 * 🐍 **Conda backend support** (venv and virtualenv coming soon)
@@ -119,6 +121,27 @@ gvit clone https://github.com/user/repo.git --force
 gvit clone https://github.com/user/repo.git --verbose
 ```
 
+### Initialize a New Project
+
+Similar to `git init` but with environment setup:
+
+```bash
+# In current directory
+gvit init
+
+# In specific directory
+gvit init my-project
+
+# With remote repository
+gvit init --remote https://github.com/user/my-project.git
+
+# With all options
+gvit init my-project \
+  --remote https://github.com/user/my-project.git \
+  --python 3.12 \
+  --extra-deps dev,test
+```
+
 ### Configuration Management
 
 ```bash
@@ -142,8 +165,24 @@ gvit envs list
 # Show details of a specific environment
 gvit envs show my-env
 
-# Remove an environment from registry
+# Remove an environment (registry and backend)
 gvit envs delete my-env
+
+# Clean up orphaned environments (repos that no longer exist)
+gvit envs prune
+
+# Preview what would be removed
+gvit envs prune --dry-run
+
+# Auto-confirm removal
+gvit envs prune --yes
+```
+
+### Explore Commands
+
+```bash
+# Show all available commands in tree structure
+gvit tree
 ```
 
 ---
@@ -254,7 +293,10 @@ gvit/
 │   ├── cli.py              # CLI entry point (Typer app)
 │   ├── env_registry.py     # Environment registry management
 │   ├── commands/
+│   │   ├── _common.py      # Shared functions between commands
 │   │   ├── clone.py        # Clone command logic
+│   │   ├── init.py         # Init command logic
+│   │   ├── tree.py         # Tree command (show command structure)
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
 │   ├── backends/
@@ -278,10 +320,13 @@ gvit/
 | Feature | Status | Description |
 |---------|--------|-------------|
 | **Clone command** | ✅ | Full repository cloning with environment setup |
+| **Init command** | ✅ | Initialize new Git repos with environment setup |
+| **Tree command** | ✅ | Visual command structure explorer |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
 | **Environment registry** | ✅ | Track environments with metadata and dependency hashes |
-| **Environment management** | ✅ | `list`, `show`, `delete` commands for tracked environments |
+| **Environment management** | ✅ | `list`, `show`, `delete`, `prune` commands |
+| **Orphan cleanup** | ✅ | Automatic detection and removal of orphaned environments |
 | **Dependency resolution** | ✅ | Priority-based resolution (CLI > repo > local > default) |
 | **pyproject.toml support** | ✅ | Install base + optional dependencies (extras) |
 | **Requirements.txt support** | ✅ | Standard pip requirements files |
@@ -363,6 +408,21 @@ gvit clone https://github.com/user/project.git \\
   --verbose
 ```
 
+### Initialize a New Project
+
+```bash
+# Create a new project from scratch
+mkdir my-new-project
+cd my-new-project
+gvit init --remote https://github.com/user/my-new-project.git
+
+# Now ready to work
+echo "# My Project" > README.md
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+```
+
 ### Managing Tracked Environments
 
 ```bash
@@ -372,8 +432,37 @@ gvit envs list
 # Check environment details (shows registry file with syntax highlighting)
 gvit envs show my-project
 
-# Clean up registry (doesn't delete the actual conda env)
+# Remove specific environment (registry + conda env)
 gvit envs delete old-project
+
+# Clean up all orphaned environments
+gvit envs prune
+
+# See what would be cleaned without actually removing
+gvit envs prune --dry-run
+```
+
+### Explore Available Commands
+
+```bash
+# Show command tree
+gvit tree
+
+# Output:
+# gvit
+# ├── clone
+# ├── init
+# ├── config/
+# │   ├── setup
+# │   ├── add-extra-deps
+# │   ├── remove-extra-deps
+# │   └── show
+# ├── envs/
+# │   ├── list
+# │   ├── show
+# │   ├── delete
+# │   └── prune
+# └── tree
 ```
 
 ---
