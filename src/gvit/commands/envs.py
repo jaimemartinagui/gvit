@@ -15,9 +15,27 @@ def list_() -> None:
     envs = env_registry.list_environments()
     if not envs:
         typer.echo("No environments in registry.")
+        return None
+
+    typer.echo("Tracked environments:")
     for env_name in envs:
         if env_info := env_registry.load_environment_info(env_name):
-            typer.echo(f"  • {env_name} ({env_info['environment']['backend']}) -> {env_info['repository']['path']}")
+            backend = env_info['environment']['backend']
+            python = env_info['environment']['python']
+            repo_path = env_info['repository']['path']
+
+            if backend == "conda":
+                conda_backend = CondaBackend()
+                activate_cmd = conda_backend.get_activate_cmd(env_name)
+            else:
+                activate_cmd = f"# Activate command for {backend} not available"
+
+            typer.secho(f"\n  • {env_name}", fg=typer.colors.CYAN, bold=True)
+            typer.echo(f"    Backend:    {backend}")
+            typer.echo(f"    Python:     {python}")
+            typer.echo(f"    Location:   {repo_path}")
+            typer.secho(f"    Command:    ", nl=False, dim=True)
+            typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
 
 
 def delete(

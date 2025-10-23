@@ -9,6 +9,7 @@ import typer
 # from gvit.commands.pull import pull
 from gvit.commands.clone import clone
 from gvit.commands.init import init
+from gvit.commands.setup import setup as setup_repo
 from gvit.commands.tree import tree
 from gvit.commands.envs import list_, delete, show as show_env, prune
 from gvit.commands.config import setup, add_extra_deps, remove_extra_deps, show
@@ -34,6 +35,7 @@ app.add_typer(config, name="config")
 app.add_typer(envs, name="envs")
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(clone)
 app.command()(init)
+app.command(name="setup")(setup_repo)
 app.command()(tree)
 # app.command()(pull)
 

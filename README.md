@@ -35,10 +35,15 @@ pip install -r requirements.txt
 With **`gvit`**, all of that happens automatically:
 
 ```bash
+# Clone from scratch
 gvit clone https://github.com/someone/project.git
+
+# Or setup an existing repo
+cd existing-project
+gvit setup
 ```
 
-🎉 Repository cloned, environment created, and dependencies installed!
+🎉 Environment created and dependencies installed!
 
 ### Examples
 
@@ -144,6 +149,25 @@ gvit init my-project \
   --extra-deps dev,test
 ```
 
+### Setup an Existing Repository
+
+If you already have a cloned repository and want to set up the environment:
+
+```bash
+# In the repository directory
+cd my-existing-repo
+gvit setup
+
+# Or specify a different directory
+gvit setup path/to/repo
+
+# With custom options
+gvit setup --python 3.12 --extra-deps dev,test
+
+# Skip dependency installation
+gvit setup --no-deps
+```
+
 ### Configuration Management
 
 ```bash
@@ -191,8 +215,25 @@ gvit tree
 
 ## 🧠 How it works
 
+### Commands
+
+**`gvit clone`**: Clones repository + creates environment
 1. **Clones the repository** using standard `git clone`
 2. **Detects repository name** from URL (handles `.git` suffix correctly)
+3. Proceeds to environment setup (steps 3-7 below)
+
+**`gvit init`**: Initializes Git repository + creates environment
+1. **Initializes Git repository** using `git init`
+2. **Optionally adds remote** if `--remote-url` is provided
+3. Proceeds to environment setup (steps 3-7 below)
+
+**`gvit setup`**: Creates environment for existing repository
+1. **Verifies Git repository** exists in target directory
+2. **Detects remote URL** if available
+3. Proceeds to environment setup (steps 3-7 below)
+
+### Environment Setup Process (common to all commands)
+
 3. **Creates virtual environment** using your preferred backend:
    - Currently: `conda`
    - Coming soon: `venv`, `virtualenv`
@@ -298,6 +339,7 @@ gvit/
 │   │   ├── _common.py      # Shared functions between commands
 │   │   ├── clone.py        # Clone command logic
 │   │   ├── init.py         # Init command logic
+│   │   ├── setup.py        # Setup command logic (existing repos)
 │   │   ├── tree.py         # Tree command (show command structure)
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
@@ -323,6 +365,7 @@ gvit/
 |---------|--------|-------------|
 | **Clone command** | ✅ | Full repository cloning with environment setup |
 | **Init command** | ✅ | Initialize new Git repos with environment setup |
+| **Setup command** | ✅ | Create environment for existing repositories |
 | **Tree command** | ✅ | Visual command structure explorer |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
@@ -425,6 +468,20 @@ git commit -m "Initial commit"
 git push -u origin main
 ```
 
+### Setup an Existing Repository
+
+```bash
+# You already cloned a repo manually
+git clone https://github.com/user/project.git
+cd project
+
+# Now set up the environment
+gvit setup
+
+# Or with specific options
+gvit setup --python 3.12 --extra-deps dev,test
+```
+
 ### Managing Tracked Environments
 
 ```bash
@@ -453,17 +510,18 @@ gvit tree
 # Output:
 # gvit
 # ├── clone
-# ├── init
 # ├── config/
-# │   ├── setup
 # │   ├── add-extra-deps
 # │   ├── remove-extra-deps
+# │   ├── setup
 # │   └── show
 # ├── envs/
-# │   ├── list
-# │   ├── show
 # │   ├── delete
-# │   └── prune
+# │   ├── list
+# │   ├── prune
+# │   └── show
+# ├── init
+# ├── setup
 # └── tree
 ```
 
