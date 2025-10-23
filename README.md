@@ -40,9 +40,11 @@ gvit clone https://github.com/someone/project.git
 
 🎉 Repository cloned, environment created, and dependencies installed!
 
-### Example
+### Examples
 
-![gvit clone example](assets/img/example.png)
+![gvit clone example](assets/img/clone.png)
+
+![gvit prune example](assets/img/prune.png)
 
 ---
 
@@ -133,11 +135,11 @@ gvit init
 gvit init my-project
 
 # With remote repository
-gvit init --remote https://github.com/user/my-project.git
+gvit init --remote-url https://github.com/user/my-project.git
 
 # With all options
 gvit init my-project \
-  --remote https://github.com/user/my-project.git \
+  --remote-url https://github.com/user/my-project.git \
   --python 3.12 \
   --extra-deps dev,test
 ```
@@ -414,7 +416,7 @@ gvit clone https://github.com/user/project.git \\
 # Create a new project from scratch
 mkdir my-new-project
 cd my-new-project
-gvit init --remote https://github.com/user/my-new-project.git
+gvit init --remote-url https://github.com/user/my-new-project.git
 
 # Now ready to work
 echo "# My Project" > README.md
