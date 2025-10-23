@@ -121,16 +121,27 @@ class EnvRegistry:
         env_file = ENVS_DIR / f"{venv_name}.toml"
         return env_file.exists()
 
-    def delete_environment_from_registry(self, venv_name: str) -> bool:
+    def delete_environment_registry(self, venv_name: str) -> bool:
         """
         Delete environment information from registry.
         Returns True if deleted, False if not found.
         """
-        env_file = ENVS_DIR / f"{venv_name}.toml"
-        if not env_file.exists():
-            return False
-        env_file.unlink()
-        return True
+        if (env_file := ENVS_DIR / f"{venv_name}.toml").exists():
+            env_file.unlink()
+            return True
+        return False
+
+    def get_orphaned_envs(self) -> list[EnvRegistryFile]:
+        """Method to get environments if their repository path no longer exists."""
+        to_prune = []
+        for env_name in self.list_environments():
+            env_info = self.load_environment_info(env_name)
+            if not env_info:
+                continue
+            repo_path = Path(env_info['repository']['path'])
+            if not repo_path.exists():
+                to_prune.append(env_info)
+        return to_prune
 
     def _ensure_envs_dir(self) -> None:
         """Create environments directory if it does not exist."""

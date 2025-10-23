@@ -69,7 +69,7 @@ def clone(
     if no_deps:
         resolved_base_deps = None
         resolved_extra_deps = {}
-        typer.echo("\n- Skipping dependency installation...")
+        typer.echo("\n- Skipping dependency installation...✅")
     else:
         resolved_base_deps, resolved_extra_deps = _install_dependencies(
             venv_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
@@ -111,7 +111,7 @@ def _clone_repo(repo_url: str, target_dir: str, verbose: bool, extra_args: list[
 
 def _create_venv(venv_name: str, backend: str, python: str, force: bool, verbose: bool) -> str:
     """Function to create the virtual environment for the repository."""
-    typer.echo(f'\n- Creating virtual environment "{venv_name}" ({backend} - Python {python})...', nl=False)
+    typer.echo(f'\n- Creating virtual environment "{venv_name}" - {backend} - Python {python} (this might take some time)...', nl=False)
     if backend == "conda":
         conda_backend = CondaBackend()
         venv_name = conda_backend.create_venv(venv_name, python, force, verbose)

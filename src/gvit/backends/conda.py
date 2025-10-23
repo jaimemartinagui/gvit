@@ -51,7 +51,7 @@ class CondaBackend:
         if self.environment_exists(venv_name):
             if force:
                 typer.secho(f"⚠️  Environment '{venv_name}' already exists. Removing it...", fg=typer.colors.YELLOW)
-                self.remove_environment(venv_name, verbose)
+                self.delete_environment(venv_name, verbose)
             typer.secho(f"\n  ⚠️  Environment '{venv_name}' already exists. What would you like to do?", fg=typer.colors.YELLOW)
             choice = typer.prompt(
                 "    [1] Use a different name (auto-generate)\n"
@@ -66,10 +66,10 @@ class CondaBackend:
                     venv_name = self.get_unique_environment_name(venv_name)
                     typer.echo(f'  Using environment name "{venv_name}"...', nl=False)
                 case 2:
-                    typer.echo(f'  Overwriting environment "{venv_name}" (this might take some time)...', nl=False)
-                    self.remove_environment(venv_name, verbose)
+                    typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
+                    self.delete_environment(venv_name, verbose)
                 case _:
-                    typer.secho("  Aborted.", fg=typer.colors.RED)
+                    typer.secho("  Aborted!", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
         self._create_venv(venv_name, python, verbose)
         return venv_name
@@ -130,7 +130,7 @@ class CondaBackend:
         except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
             return False
 
-    def remove_environment(self, venv_name: str, verbose: bool = False) -> None:
+    def delete_environment(self, venv_name: str, verbose: bool = False) -> None:
         """Remove a conda environment."""
         try:
             result = subprocess.run(
@@ -142,7 +142,7 @@ class CondaBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"Failed to remove conda environment:\n{e.stderr}", fg=typer.colors.RED)
+            typer.secho(f"❗ Failed to delete conda environment:\n{e.stderr}", fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
     def get_activate_cmd(self, venv_name: str) -> str:
