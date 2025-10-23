@@ -34,7 +34,7 @@ def delete(
         typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
         return None
 
-    typer.echo(f'\n- Removing environment "{venv_name}" backend...', nl=False)
+    typer.echo(f'- Removing environment "{venv_name}" backend...', nl=False)
     if env_info["environment"]["backend"] == "conda":
         conda_backend = CondaBackend()
         conda_backend.delete_environment(venv_name, verbose)

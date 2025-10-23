@@ -12,16 +12,13 @@ from gvit.utils.utils import (
     load_repo_config,
     get_backend,
     get_python,
-    get_base_deps,
-    get_extra_deps,
     get_verbose,
     extract_repo_name_from_url,
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.env_registry import EnvRegistry
-from gvit.backends.conda import CondaBackend
 from gvit.utils.globals import SUPPORTED_BACKENDS
-from gvit.utils.schemas import LocalConfig, RepoConfig
+from gvit.commands._common import create_venv, install_dependencies, show_summary_message
 
 
 def clone(
@@ -38,7 +35,7 @@ def clone(
     verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")
 ) -> None:
     """
-    Clone a repository and create a virtual environment.
+    Clone a Git repository and create a virtual environment.
 
     Any extra options will be passed directly to the `git clone` command.
 
@@ -58,12 +55,12 @@ def clone(
     repo_config = load_repo_config(target_dir)
 
     # 4. Create the virtual environment
-    venv_name = venv_name or Path(target_dir).stem
+    venv_name = venv_name or Path(target_dir).name
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    venv_name = _create_venv(venv_name, backend, python, force, verbose)
+    venv_name = create_venv(venv_name, backend, python, force, verbose)
 
     # 5. Install dependencies
     if no_deps:
@@ -71,7 +68,7 @@ def clone(
         resolved_extra_deps = {}
         typer.echo("\n- Skipping dependency installation...✅")
     else:
-        resolved_base_deps, resolved_extra_deps = _install_dependencies(
+        resolved_base_deps, resolved_extra_deps = install_dependencies(
             venv_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
         )
 
@@ -88,7 +85,7 @@ def clone(
     )
 
     # 7. Summary message
-    _show_summary_message(venv_name, backend, target_dir)
+    show_summary_message(venv_name, backend, target_dir)
 
 
 def _clone_repo(repo_url: str, target_dir: str, verbose: bool, extra_args: list[str] | None = None) -> None:
@@ -105,127 +102,5 @@ def _clone_repo(repo_url: str, target_dir: str, verbose: bool, extra_args: list[
             typer.echo(result.stdout)
         typer.echo("✅")
     except subprocess.CalledProcessError as e:
-        typer.secho(f"\nGit clone failed:\n{e.stderr}", fg=typer.colors.RED)
+        typer.secho(f"❗ Git clone failed:\n{e.stderr}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-
-
-def _create_venv(venv_name: str, backend: str, python: str, force: bool, verbose: bool) -> str:
-    """Function to create the virtual environment for the repository."""
-    typer.echo(f'\n- Creating virtual environment "{venv_name}" - {backend} - Python {python} (this might take some time)...', nl=False)
-    if backend == "conda":
-        conda_backend = CondaBackend()
-        venv_name = conda_backend.create_venv(venv_name, python, force, verbose)
-    typer.echo("✅")
-    return venv_name
-
-
-def _install_dependencies(
-    venv_name: str,
-    backend: str,
-    project_dir: str,
-    base_deps: str | None,
-    extra_deps: str | None,
-    repo_config: RepoConfig,
-    local_config: LocalConfig,
-    verbose: bool
-) -> tuple[str | None, dict[str, str]]:
-    """
-    Install dependencies with priority resolution system.
-    Priority: CLI > Repo Config > Local Config > Default
-    """
-    typer.echo("\n- Resolving dependencies...")
-    resolved_base = _resolve_base_deps(base_deps, repo_config, local_config)
-
-    if "pyproject.toml" in resolved_base:
-        extra_deps_ = extra_deps.split(",") if extra_deps else None
-        typer.echo(f'  Dependencies to install: pyproject.toml{f" (extras: {extra_deps})" if extra_deps else ""}')
-        typer.echo("\n- Installing project and dependencies...")
-        deps_group_name = f"base (extras: {extra_deps})" if extra_deps else "base"
-        success = _install_dependencies_from_file(
-            venv_name, backend, project_dir, deps_group_name, resolved_base, extra_deps_, verbose
-        )
-        return resolved_base if success else None, {}
-
-    resolved_extras = _resolve_extra_deps(extra_deps, repo_config, local_config)
-    deps_to_install = {**{"base": resolved_base}, **resolved_extras}
-    typer.echo(f"  Dependencies to install: {deps_to_install}")
-    typer.echo("\n- Installing dependencies...")
-    base_sucess = _install_dependencies_from_file(venv_name, backend, project_dir, "base", resolved_base, verbose=verbose)
-    for deps_group_name, deps_path in resolved_extras.items():
-        deps_group_sucess = _install_dependencies_from_file(
-            venv_name, backend, project_dir, deps_group_name, deps_path, verbose=verbose
-        )
-        if not deps_group_sucess:
-            resolved_extras.pop(deps_group_name)
-
-    return resolved_base if base_sucess else None, resolved_extras
-
-
-def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
-    """Resolve base dependencies."""
-    return base_deps or repo_config.get("deps", {}).get("base") or get_base_deps(local_config)
-
-
-def _resolve_extra_deps(
-    extra_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig
-) -> dict[str, str]:
-    """
-    Resolve extra dependencies.
-    Format: 'dev,test' (names) or 'dev:path1.txt,test:path2.txt' (inline paths)
-    Returns dict of {name: path}
-    """
-    if not extra_deps:
-        return {}
-
-    repo_extra_deps = get_extra_deps(repo_config)
-    local_extra_deps = get_extra_deps(local_config)
-
-    extras = {}
-
-    for item in extra_deps.split(","):
-        item = item.strip()
-        if ":" in item:
-            # Inline format: "dev:requirements-dev.txt"
-            name, path = item.split(":", 1)
-            extras[name.strip()] = path.strip()
-        else:
-            if path := (repo_extra_deps.get(item) or local_extra_deps.get(item)):
-                extras[item] = path
-            else:
-                typer.secho(f'  ⚠️  Extra deps group "{item}" not found in configs, skipping.', fg=typer.colors.YELLOW)
-
-    return extras
-
-
-def _install_dependencies_from_file(
-    venv_name: str,
-    backend: str,
-    project_dir: str,
-    deps_group_name: str,
-    deps_path: str,
-    extra_deps: list[str] | None = None,
-    verbose: bool = False
-) -> bool:
-    """Install dependencies from a single file."""
-    project_path = Path(project_dir).resolve()
-    deps_path_ = Path(deps_path)
-    deps_abs_path = deps_path_ if deps_path_.is_absolute() else project_path / deps_path_
-    if backend == "conda":
-        conda_backend = CondaBackend()
-        return conda_backend.install_dependencies(
-            venv_name, deps_group_name, deps_abs_path, project_path, extra_deps, verbose
-        )
-    return False
-
-
-def _show_summary_message(venv_name: str, backend: str, project_dir: str) -> None:
-    """Function to show the summary message of the process."""
-    if backend == 'conda':
-        conda_backend = CondaBackend()
-        activate_cmd = conda_backend.get_activate_cmd(venv_name)
-    typer.echo("\n🎉  Project setup complete!")
-    typer.echo(f"📁  Repository -> {project_dir}")
-    typer.echo(f"🐍  Environment ({backend}) -> {venv_name}")
-    typer.echo(f"📖  Registry updated -> ~/.config/gvit/envs/{venv_name}.toml")
-    typer.echo("🚀  Ready to start working -> ", nl=False)
-    typer.secho(f'cd {project_dir} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
