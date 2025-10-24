@@ -14,7 +14,7 @@ from gvit.utils.utils import (
     get_python,
     get_verbose,
 )
-from gvit.utils.validators import validate_backend, validate_python
+from gvit.utils.validators import validate_backend, validate_python, validate_directory
 from gvit.env_registry import EnvRegistry
 from gvit.utils.globals import SUPPORTED_BACKENDS
 from gvit.commands._common import create_venv, install_dependencies, show_summary_message
@@ -46,9 +46,7 @@ def init(
     """
     # 1. Resolve directory
     target_dir = Path(directory).resolve()
-    if not target_dir.exists():
-        typer.secho(f"Directory '{directory}' does not exist.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    validate_directory(target_dir)
 
     # 2. Load local config
     local_config = load_local_config()
