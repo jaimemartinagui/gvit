@@ -59,15 +59,13 @@ def pull(
             fg=typer.colors.YELLOW
         )
         typer.echo("\n- Running git pull...", nl=False)
-        # _pull_repo(str(target_dir), verbose, ctx.args)
-        typer.echo("✅")
+        _pull_repo(str(target_dir), verbose, ctx.args)
         typer.echo("\n🎉 Repository updated successfully!")
         return None
 
     # 5. Run git pull
     typer.echo("\n- Running git pull...", nl=False)
-    # _pull_repo(str(target_dir), verbose, ctx.args)
-    typer.echo("✅")
+    _pull_repo(str(target_dir), verbose, ctx.args)
 
     # 6. Skip dependency check if --no-deps
     if no_deps:
@@ -86,12 +84,13 @@ def pull(
     else:
         typer.echo("\n- Searching for changes in dependencies...", nl=False)
         modified_deps_groups = env_registry.get_modified_deps_groups(venv_name, current_deps)
-        if not modified_deps_groups:
+        to_reinstall = {k: v for k, v in current_deps.items() if k in modified_deps_groups}
+        if not to_reinstall:
             typer.secho("environment is up to date ✅", fg=typer.colors.GREEN)
             typer.echo("  Use `gvit pull --force-deps` to update the environment anyway.")
             typer.echo("\n🎉 Repository updated successfully!")
             return None
-        to_reinstall = {k: v for k, v in current_deps.items() if k in modified_deps_groups}
+        typer.echo("✅")
 
     # 9. Reinstall changed dependencies
     typer.echo(f"\n- Dependency groups to re-install: {list(to_reinstall)}.")
