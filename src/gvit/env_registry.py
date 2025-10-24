@@ -71,38 +71,37 @@ class EnvRegistry:
 
         typer.echo("✅")
 
-    def get_modified_deps_groups(self, venv_name: str) -> list[str]:
+    def get_modified_deps_groups(self, venv_name: str, current_deps: dict[str, str]) -> list[str]:
         """
         Check if dependency files have changed since installation.            
-        Returns a dictionary mapping dependency names to whether they changed or not.
-            Example: {"base": True, "dev": False}
+        Returns a list of dependency group names that have changed.
         """
         env_info = self.load_environment_info(venv_name)
         if not env_info:
             return []
 
-        repo_path = Path(env_info["repository"]["path"])
         deps = env_info.get("deps", {})
-        if not deps:
-            return []
-
         installed = deps.get("installed", {})
-        if not installed:
+        if not deps or not installed:
             return []
 
+        repo_path = Path(env_info["repository"]["path"])
         modified_deps_groups = []
 
-        if "base" in deps and deps["base"]:
-            base_file = repo_path / deps["base"]
-            if base_file.exists() and self._hash_file(base_file) != installed.get("base_hash", ""):
-                modified_deps_groups.append("base")
-
-        for deps_group_name, deps_group_path in deps.items():
-            if deps_group_name in ["base", "installed"]:
+        for dep_name, dep_path in current_deps.items():
+            installed_dep_name = f"{dep_name}_hash"
+            if installed_dep_name not in installed:
                 continue
-            dep_file = repo_path / Path(str(deps_group_path))
-            if dep_file.exists() and self._hash_file(dep_file) != installed.get(f"{deps_group_name}_hash", ""):
-                modified_deps_groups.append(deps_group_name)
+            base_file = repo_path / dep_path
+            if not base_file.exists():
+                continue
+            current_hash = (
+                self._hash_pyproject_deps(base_file, None if dep_name == "base" else dep_name)
+                if base_file.name == "pyproject.toml"
+                else self._hash_file(base_file)
+            )
+            if current_hash != installed[installed_dep_name]:
+                modified_deps_groups.append(dep_name)
 
         return modified_deps_groups
 
@@ -153,13 +152,35 @@ class EnvRegistry:
         if base_deps:
             base_file = repo_abs_path / base_deps
             if base_file.exists():
-                deps_hashes["base_hash"] = self._hash_file(base_file)
+                hash_ = self._hash_pyproject_deps(base_file) if base_file.name == "pyproject.toml" else self._hash_file(base_file)
+                if hash_:
+                    deps_hashes["base_hash"] = hash_
         for name, path in extra_deps.items():
             dep_file = repo_abs_path / path
             if dep_file.exists():
-                deps_hashes[f"{name}_hash"] = self._hash_file(dep_file)
+                hash_ = self._hash_pyproject_deps(dep_file, name) if dep_file.name == "pyproject.toml" else self._hash_file(dep_file)
+                if hash_:
+                    deps_hashes[f"{name}_hash"] = hash_
         return deps_hashes
 
-    def _hash_file(self, file_path: Path) -> str:
+    def _hash_file(self, file_path: Path) -> str | None:
         """Calculate SHA256 hash of a file and return first 16 characters."""
-        return hashlib.sha256(file_path.read_bytes()).hexdigest()[:16] if file_path.exists() else ""
+        return hashlib.sha256(file_path.read_bytes()).hexdigest()[:16] if file_path.exists() else None
+
+    def _hash_pyproject_deps(self, pyproject_path: Path, extra_dep: str | None = None) -> str | None:
+        """
+        Hash only a dependency section of pyproject.toml.
+        If extra_dep is provided it hashes those deps [project.optional-dependencies.<extra_dep>].
+        If no extra_dep is provided it hashes the base deps [project.dependencies].
+        """
+        if not pyproject_path.exists():
+            return None
+        try:
+            content = toml.load(pyproject_path)
+            deps = (
+                content.get("project", {}).get("optional-dependencies", {}).get(extra_dep)
+                if extra_dep else content.get("project", {}).get("dependencies")
+            )
+            return hashlib.sha256(str(sorted(deps)).encode()).hexdigest()[:16] if deps else None
+        except Exception:
+            return None

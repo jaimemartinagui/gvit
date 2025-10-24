@@ -45,7 +45,7 @@ def install_dependencies(
         typer.echo(f'  Dependencies to install: pyproject.toml{f" (extras: {extra_deps})" if extra_deps else ""}')
         typer.echo("\n- Installing project and dependencies...")
         deps_group_name = f"base (extras: {extra_deps})" if extra_deps else "base"
-        success = _install_dependencies_from_file(
+        success = install_dependencies_from_file(
             venv_name, backend, project_dir, deps_group_name, resolved_base, extra_deps_, verbose
         )
         return (
@@ -57,9 +57,9 @@ def install_dependencies(
     deps_to_install = {**{"base": resolved_base}, **resolved_extras}
     typer.echo(f"  Dependencies to install: {deps_to_install}")
     typer.echo("\n- Installing dependencies...")
-    base_sucess = _install_dependencies_from_file(venv_name, backend, project_dir, "base", resolved_base, verbose=verbose)
+    base_sucess = install_dependencies_from_file(venv_name, backend, project_dir, "base", resolved_base, verbose=verbose)
     for deps_group_name, deps_path in resolved_extras.items():
-        deps_group_sucess = _install_dependencies_from_file(
+        deps_group_sucess = install_dependencies_from_file(
             venv_name, backend, project_dir, deps_group_name, deps_path, verbose=verbose
         )
         if not deps_group_sucess:
@@ -76,12 +76,12 @@ def show_summary_message(venv_name: str, backend: str, project_dir: str) -> None
     typer.echo("\n🎉  Project setup complete!")
     typer.echo(f"📁  Repository -> {project_dir}")
     typer.echo(f"🐍  Environment ({backend}) -> {venv_name}")
-    typer.echo(f"📖  Registry updated -> ~/.config/gvit/envs/{venv_name}.toml")
+    typer.echo(f"📖  Registry -> ~/.config/gvit/envs/{venv_name}.toml")
     typer.echo("🚀  Ready to start working -> ", nl=False)
     typer.secho(f'cd {project_dir} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
 
 
-def _install_dependencies_from_file(
+def install_dependencies_from_file(
     venv_name: str,
     backend: str,
     project_dir: str,

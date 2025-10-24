@@ -9,7 +9,7 @@ import typer
 
 from gvit.env_registry import EnvRegistry
 from gvit.utils.utils import load_local_config, load_repo_config, get_verbose, get_extra_deps
-from gvit.commands._common import _install_dependencies_from_file
+from gvit.commands._common import install_dependencies_from_file
 from gvit.utils.schemas import EnvRegistryFile, RepoConfig
 
 
@@ -77,84 +77,42 @@ def pull(
 
     # 7. Get the current path (after pull) for the base and extra deps
     repo_config = load_repo_config(str(target_dir))
-    current_base_deps, current_extra_deps = _get_current_deps(base_deps, extra_deps, repo_config, env)
-    print(current_base_deps)
-    print(current_extra_deps)
+    current_deps = _get_current_deps(base_deps, extra_deps, repo_config, env)
 
-    return None
-
-
-
-
-
-
+    # 8. Get dep groups to reinstall
     if force_deps:
-        typer.echo("\n- Force reinstalling all dependencies...")
-        # to_reinstall = 
+        typer.echo("\n- Force reinstalling all dependencies.")
+        to_reinstall = current_deps
     else:
-        modified_deps_groups = env_registry.get_modified_deps_groups(venv_name)
-        if not modified_deps_groups and not force_deps:
-            typer.secho("\n- No dependency tracking found in registry.", fg=typer.colors.YELLOW)
+        typer.echo("\n- Searching for changes in dependencies...", nl=False)
+        modified_deps_groups = env_registry.get_modified_deps_groups(venv_name, current_deps)
+        if not modified_deps_groups:
+            typer.secho("environment is up to date ✅", fg=typer.colors.GREEN)
             typer.echo("  Use `gvit pull --force-deps` to update the environment anyway.")
             typer.echo("\n🎉 Repository updated successfully!")
             return None
+        to_reinstall = {k: v for k, v in current_deps.items() if k in modified_deps_groups}
 
-
-
-    # Find what changed
-    changed_deps = [name for name, changed in modified_deps_groups.items() if changed]
-    if not changed_deps and not force_deps:
-        typer.secho("\n✅ Dependencies are up to date", fg=typer.colors.GREEN)
-        return None
-
-
-
-
-
-
-
-    # 8. Reinstall changed dependencies
+    # 9. Reinstall changed dependencies
+    typer.echo(f"\n- Dependency groups to re-install: {list(to_reinstall)}.")
     backend = env['environment']['backend']
-    if force_deps:
-        typer.echo("\n- Force reinstalling all dependencies...")
-        to_reinstall = list(modified_deps_groups.keys())
-    else:
-        typer.echo(f"\n- Dependency changes detected: {', '.join(changed_deps)}")
-        to_reinstall = changed_deps
+    for dep_name, dep_path in to_reinstall.items():
+        install_dependencies_from_file(
+            venv_name, backend, str(target_dir), dep_name, dep_path, verbose=verbose
+        )
 
-    deps = env.get("deps", {})
-    for dep_name in to_reinstall:
-        if dep_name == "base":
-            dep_path = deps.get("base")
-            if dep_path:
-                typer.echo(f"\n- Reinstalling base dependencies from {dep_path}...")
-                _install_dependencies_from_file(
-                    venv_name, backend, str(target_dir), "base", dep_path, verbose=verbose
-                )
-        else:
-            dep_path = deps.get(dep_name)
-            if dep_path:
-                typer.echo(f"\n- Reinstalling {dep_name} dependencies from {dep_path}...")
-                _install_dependencies_from_file(
-                    venv_name, backend, str(target_dir), dep_name, dep_path, verbose=verbose
-                )
-
-    # 9. Update registry with new hashes
-    typer.echo("\n- Updating registry with new dependency hashes...", nl=False)
-    base_deps = deps.get("base")
-    extra_deps = {k: v for k, v in deps.items() if k not in ["base", "installed"]}
-    
+    # 10. Update registry with new hashes
     env_registry.save_environment_info(
         venv_name=venv_name,
         repo_path=str(target_dir),
         repo_url=env['repository']['url'],
         backend=backend,
         python=env['environment']['python'],
-        base_deps=base_deps,
-        extra_deps=extra_deps
+        base_deps=current_deps.get("base"),
+        extra_deps={k: v for k, v in current_deps.items() if k != "base"}
     )
 
-    typer.secho("\n🎉 Repository and dependencies updated successfully!", fg=typer.colors.GREEN)
+    typer.echo("\n🎉 Repository and dependencies updated successfully!")
 
 
 def _pull_repo(repo_dir: str, verbose: bool = False, extra_args: list[str] | None = None) -> None:
@@ -177,7 +135,7 @@ def _pull_repo(repo_dir: str, verbose: bool = False, extra_args: list[str] | Non
 
 def _get_current_deps(
     base_deps: str | None, extra_deps: str | None, repo_config: RepoConfig, env: EnvRegistryFile
-) -> tuple[str | None, dict[str, str]]:
+) -> dict[str, str]:
     """Function to get the current value for the base deps and extra_deps."""
     current_base_deps = base_deps or repo_config.get("deps", {}).get("base") or env.get("deps", {}).get("base")
     extra_deps_ = {}
@@ -193,4 +151,4 @@ def _get_current_deps(
     current_extra_deps = (
         extra_deps_ or {**get_extra_deps(repo_config), **extra_deps_} or {**env_extra_deps, **extra_deps_}
     )
-    return current_base_deps, current_extra_deps
+    return {"base": current_base_deps, **current_extra_deps} if current_base_deps else current_extra_deps

@@ -84,7 +84,7 @@ class CondaBackend:
         verbose: bool = False
     ) -> bool:
         """Method to install the dependencies from the provided deps_path."""
-        typer.echo(f'  Dependency group "{deps_group_name}"...', nl=False)
+        typer.echo(f'  Group "{deps_group_name}"...', nl=False)
         deps_path = deps_path if deps_path.is_absolute() else project_dir / deps_path
         if not deps_path.exists():
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
