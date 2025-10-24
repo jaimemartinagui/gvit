@@ -48,7 +48,10 @@ def install_dependencies(
         success = _install_dependencies_from_file(
             venv_name, backend, project_dir, deps_group_name, resolved_base, extra_deps_, verbose
         )
-        return resolved_base if success else None, {}
+        return (
+            resolved_base if success else None,
+            {extra_dep: "pyproject.toml" for extra_dep in extra_deps_} if extra_deps_ else {}
+        )
 
     resolved_extras = _resolve_extra_deps(extra_deps, repo_config, local_config)
     deps_to_install = {**{"base": resolved_base}, **resolved_extras}

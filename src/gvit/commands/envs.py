@@ -23,6 +23,7 @@ def list_() -> None:
             backend = env_info['environment']['backend']
             python = env_info['environment']['python']
             repo_path = env_info['repository']['path']
+            env_registry_file = ENVS_DIR / f"{env_name}.toml"
 
             if backend == "conda":
                 conda_backend = CondaBackend()
@@ -34,6 +35,7 @@ def list_() -> None:
             typer.echo(f"    Backend:    {backend}")
             typer.echo(f"    Python:     {python}")
             typer.echo(f"    Location:   {repo_path}")
+            typer.echo(f"    Registry:   {env_registry_file}")
             typer.secho(f"    Command:    ", nl=False, dim=True)
             typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
 

@@ -50,7 +50,7 @@ def init(
         typer.secho(f"Directory '{directory}' does not exist.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 
-    # 2. Load config
+    # 2. Load local config
     local_config = load_local_config()
     verbose = verbose or get_verbose(local_config)
 

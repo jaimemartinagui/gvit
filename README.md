@@ -168,6 +168,24 @@ gvit setup --python 3.12 --extra-deps dev,test
 gvit setup --no-deps
 ```
 
+### Pull Changes and Update Dependencies
+
+Smart `git pull` that automatically detects and reinstalls changed dependencies:
+
+```bash
+# Pull and auto-update dependencies if changed
+gvit pull
+
+# Pull without checking dependencies
+gvit pull --no-deps
+
+# Force reinstall all dependencies even if unchanged
+gvit pull --force-deps
+
+# Pass options to git pull
+gvit pull --rebase origin main
+```
+
 ### Configuration Management
 
 ```bash
@@ -231,6 +249,13 @@ gvit tree
 1. **Verifies Git repository** exists in target directory
 2. **Detects remote URL** if available
 3. Proceeds to environment setup (steps 3-7 below)
+
+**`gvit pull`**: Pulls changes and syncs dependencies
+1. **Finds tracked environment** for current repository
+2. **Runs `git pull`** with any extra arguments you provide
+3. **Compares dependency file hashes** (stored in registry vs. current files)
+4. **Reinstalls only changed dependencies** automatically
+5. **Updates registry** with new hashes
 
 ### Environment Setup Process (common to all commands)
 
@@ -340,6 +365,7 @@ gvit/
 │   │   ├── clone.py        # Clone command logic
 │   │   ├── init.py         # Init command logic
 │   │   ├── setup.py        # Setup command logic (existing repos)
+│   │   ├── pull.py         # Pull command with smart dependency sync
 │   │   ├── tree.py         # Tree command (show command structure)
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
@@ -366,6 +392,7 @@ gvit/
 | **Clone command** | ✅ | Full repository cloning with environment setup |
 | **Init command** | ✅ | Initialize new Git repos with environment setup |
 | **Setup command** | ✅ | Create environment for existing repositories |
+| **Pull command** | ✅ | Smart git pull with automatic dependency sync |
 | **Tree command** | ✅ | Visual command structure explorer |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
@@ -383,10 +410,10 @@ gvit/
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| **0.1.0** | 🔧 In Progress | Add `pull` command with smart dependency sync using registry |
+| **0.1.0** | 📋 Planned | Support for `venv` and `virtualenv` backends |
 | **0.2.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
-| **0.3.0** | 📋 Planned | Support for `venv` and `virtualenv` backends |
-| **0.4.0** | 📋 Planned | Shell integration and aliases |
+| **0.3.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
+| **0.4.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
 | **1.0.0** | 🎯 Goal | Stable release with all core features |
 
 ---
@@ -480,6 +507,22 @@ gvit setup
 
 # Or with specific options
 gvit setup --python 3.12 --extra-deps dev,test
+```
+
+### Daily Workflow with Pull
+
+```bash
+# Update your project (code + dependencies)
+cd my-project
+gvit pull
+
+# If requirements.txt changed:
+# - Dependency changes detected: base
+# - Reinstalling base dependencies from requirements.txt...
+# 🎉 Repository and dependencies updated successfully!
+
+# Continue working
+conda activate my-project
 ```
 
 ### Managing Tracked Environments

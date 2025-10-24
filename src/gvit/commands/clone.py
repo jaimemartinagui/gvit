@@ -43,18 +43,18 @@ def clone(
 
     Short options might conflict; in that case, use the long form for the `git clone` options.
     """
-    # 1. Load the local config
+    # 1. Load local config
     local_config = load_local_config()
     verbose = verbose or get_verbose(local_config)
 
-    # 2. Clone the repo
+    # 2. Clone repo
     target_dir = target_dir or extract_repo_name_from_url(repo_url)
     _clone_repo(repo_url, target_dir, verbose, ctx.args)
 
-    # 3. Load the repo config
+    # 3. Load repo config
     repo_config = load_repo_config(target_dir)
 
-    # 4. Create the virtual environment
+    # 4. Create virtual environment
     venv_name = venv_name or Path(target_dir).name
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)

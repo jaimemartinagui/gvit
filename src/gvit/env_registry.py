@@ -71,41 +71,45 @@ class EnvRegistry:
 
         typer.echo("✅")
 
-    # def get_dependencies_changed(self, venv_name: str) -> dict[str, bool]:
-    #     """
-    #     Check if dependency files have changed since installation.            
-    #     Returns a dictionary mapping dependency names to whether they changed or not.
-    #         Example: {"base": True, "dev": False}
-    #     """
-    #     env_info = self.load_environment_info(venv_name)
-    #     if not env_info:
-    #         return {}
+    def get_modified_deps_groups(self, venv_name: str) -> list[str]:
+        """
+        Check if dependency files have changed since installation.            
+        Returns a dictionary mapping dependency names to whether they changed or not.
+            Example: {"base": True, "dev": False}
+        """
+        env_info = self.load_environment_info(venv_name)
+        if not env_info:
+            return []
 
-    #     repo_path = Path(env_info["repository"]["path"])
-    #     deps = env_info.get("deps", {})
-    #     installed = deps.get("installed", {})
+        repo_path = Path(env_info["repository"]["path"])
+        deps = env_info.get("deps", {})
+        if not deps:
+            return []
 
-    #     changes = {}
+        installed = deps.get("installed", {})
+        if not installed:
+            return []
 
-    #     # Check base dependencies
-    #     if "base" in deps and deps["base"]:
-    #         base_file = repo_path / deps["base"]
-    #         if base_file.exists():
-    #             current_hash = self._hash_file(base_file)
-    #             stored_hash = installed.get("base_hash", "")
-    #             changes["base"] = current_hash != stored_hash
+        modified_deps_groups = []
 
-    #     # Check extra dependencies
-    #     for key, path in deps.items():
-    #         if key in ["base", "installed"]:
-    #             continue
-    #         dep_file = repo_path / path
-    #         if dep_file.exists():
-    #             current_hash = self._hash_file(dep_file)
-    #             stored_hash = installed.get(f"{key}_hash", "")
-    #             changes[key] = current_hash != stored_hash
+        if "base" in deps and deps["base"]:
+            base_file = repo_path / deps["base"]
+            if base_file.exists() and self._hash_file(base_file) != installed.get("base_hash", ""):
+                modified_deps_groups.append("base")
 
-    #     return changes
+        for deps_group_name, deps_group_path in deps.items():
+            if deps_group_name in ["base", "installed"]:
+                continue
+            dep_file = repo_path / Path(str(deps_group_path))
+            if dep_file.exists() and self._hash_file(dep_file) != installed.get(f"{deps_group_name}_hash", ""):
+                modified_deps_groups.append(deps_group_name)
+
+        return modified_deps_groups
+
+    def get_environments(self) -> list[EnvRegistryFile]:
+        """Method to get all the environments in the registry."""
+        envs = [self.load_environment_info(env_name) for env_name in self.list_environments()]
+        return [env for env in envs if env]
 
     def load_environment_info(self, venv_name: str) -> EnvRegistryFile | None:
         """Load environment information from registry."""
@@ -133,15 +137,9 @@ class EnvRegistry:
 
     def get_orphaned_envs(self) -> list[EnvRegistryFile]:
         """Method to get environments if their repository path no longer exists."""
-        to_prune = []
-        for env_name in self.list_environments():
-            env_info = self.load_environment_info(env_name)
-            if not env_info:
-                continue
-            repo_path = Path(env_info['repository']['path'])
-            if not repo_path.exists():
-                to_prune.append(env_info)
-        return to_prune
+        return [
+            env for env in self.get_environments() if not Path(env['repository']['path']).exists()
+        ]
 
     def _ensure_envs_dir(self) -> None:
         """Create environments directory if it does not exist."""
