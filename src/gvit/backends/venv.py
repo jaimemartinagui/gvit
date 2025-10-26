@@ -24,7 +24,7 @@ class VenvBackend:
         if self.venv_exists(venv_name, repo_path):
             if force:
                 typer.secho(f'⚠️  Environment "{venv_name}" already exists. Removing it...', fg=typer.colors.YELLOW)
-                self.delete_venv(venv_name, repo_path, verbose)
+                self.delete_venv(venv_name, repo_path)
             else:
                 typer.secho(f'\n  ⚠️  Environment "{venv_name}" already exists. What would you like to do?', fg=typer.colors.YELLOW)
                 choice = typer.prompt(
@@ -36,7 +36,7 @@ class VenvBackend:
                 )
                 if choice == 1:
                     typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
-                    self.delete_venv(venv_name, repo_path, verbose)
+                    self.delete_venv(venv_name, repo_path)
                 else:
                     typer.secho("  Aborted!", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
@@ -105,21 +105,19 @@ class VenvBackend:
         venv_path = repo_path / venv_name
         if not venv_path.exists():
             return False
-        # Check if it's a valid venv by looking for key files
-        if platform.system() == "Windows":
-            return (venv_path / "Scripts" / "python.exe").exists()
-        else:
-            return (venv_path / "bin" / "python").exists()
+        return (
+            (venv_path / "Scripts" / "python.exe").exists()
+            if platform.system() == "Windows"
+            else (venv_path / "bin" / "python").exists()
+        )
 
     def delete_venv(self, venv_name: str, repo_path: Path, verbose: bool = False) -> None:
         """Remove the venv directory."""
         venv_path = repo_path / venv_name
-        
         if not venv_path.exists():
             if verbose:
                 typer.echo(f"Venv directory {venv_path} does not exist, nothing to delete.")
-            return
-        
+            return None
         try:
             shutil.rmtree(venv_path)
             if verbose:
@@ -128,8 +126,9 @@ class VenvBackend:
             typer.secho(f"❗ Failed to delete venv directory: {e}", fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
-    def get_activate_cmd(self, venv_path: str) -> str:
+    def get_activate_cmd(self, venv_path: str, relative: bool = True) -> str:
         """Get the command to activate the virtual environment."""
+        venv_path = Path(venv_path).name if relative else venv_path
         return (
             f"{venv_path}\\Scripts\\activate"
             if platform.system() == "Windows"
@@ -142,8 +141,8 @@ class VenvBackend:
 
     def _create_venv(self, venv_path: Path, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using the venv module or python -m venv."""
-        python_cmd = self._get_python_cmd(python)
         try:
+            python_cmd = self._get_python_cmd(python)
             result = subprocess.run(
                 [python_cmd, "-m", "venv", str(venv_path)],
                 check=True,
@@ -199,23 +198,12 @@ class VenvBackend:
 
     def _get_pip_executable(self, venv_path: Path) -> Path:
         """Get the pip executable path inside the venv."""
-
-        if platform.system() == "Windows":
-            return venv_path / "Scripts" / "pip.exe"
-        else:
-            return venv_path / "bin" / "pip"
+        return venv_path / "Scripts" / "pip.exe" if platform.system() == "Windows" else venv_path / "bin" / "pip"
 
     def _ensure_gitignore(self, venv_name: str, repo_path: Path) -> None:
         """Add venv directory to .gitignore if not already present."""
         gitignore_path = repo_path / ".gitignore"
-        
-        # Read existing gitignore or create empty list
-        if gitignore_path.exists():
-            lines = gitignore_path.read_text().splitlines()
-        else:
-            lines = []
-        
-        # Check if venv_name is already ignored
+        lines = gitignore_path.read_text().splitlines() if gitignore_path.exists() else []
         if venv_name not in lines and f"/{venv_name}" not in lines:
             lines.append(venv_name)
             gitignore_path.write_text("\n".join(lines) + "\n")
