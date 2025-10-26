@@ -128,7 +128,7 @@ class VenvBackend:
             typer.secho(f"❗ Failed to delete venv directory: {e}", fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
-    def get_activate_cmd(self, venv_path: Path) -> str:
+    def get_activate_cmd(self, venv_path: str) -> str:
         """Get the command to activate the virtual environment."""
         return (
             f"{venv_path}\\Scripts\\activate"

@@ -119,26 +119,26 @@ def show_summary_message(registry_name: str) -> None:
     venv_info = env_registry.load_environment_info(registry_name)
     if not venv_info:
         return None
-    repository_path = venv_info["repository"]["path"]
-    repository_name = Path(repository_path).name
+    repo_path = venv_info["repository"]["path"]
+    repo_name = Path(repo_path).name
     backend = venv_info["environment"]["backend"]
-    environment_path = venv_info["environment"]["path"]
-    environment_name = Path(environment_path).name
+    venv_path = venv_info["environment"]["path"]
+    venv_name = Path(venv_path).name
     if backend == 'conda':
         conda_backend = CondaBackend()
         activate_cmd = conda_backend.get_activate_cmd(registry_name)
     elif backend == 'venv':
         venv_backend = VenvBackend()
-        activate_cmd = venv_backend.get_activate_cmd(Path(environment_path))
+        activate_cmd = venv_backend.get_activate_cmd(venv_path)
     else:
         activate_cmd = "# Activation command not available"
 
     typer.echo("\n🎉  Project setup complete!")
-    typer.echo(f"📁  Repository -> {repository_name} ({repository_path})")
-    typer.echo(f"🐍  Environment [{backend}] -> {environment_name} ({environment_path})")
+    typer.echo(f"📁  Repository -> {repo_name} ({repo_path})")
+    typer.echo(f"🐍  Environment [{backend}] -> {venv_name} ({venv_path})")
     typer.echo(f"📖  Registry -> {registry_name} (~/.config/gvit/envs/{registry_name}.toml)")
     typer.echo("🚀  Ready to start working -> ", nl=False)
-    typer.secho(f'cd {repository_path} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
+    typer.secho(f'cd {repo_path} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
 
 
 def install_dependencies_from_file(

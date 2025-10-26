@@ -34,7 +34,7 @@ def list_() -> None:
             activate_cmd = conda_backend.get_activate_cmd(venv_name)
         elif backend == "venv":
             venv_backend = VenvBackend()
-            activate_cmd = venv_backend.get_activate_cmd(Path(venv_path))
+            activate_cmd = venv_backend.get_activate_cmd(venv_path)
         else:
             activate_cmd = f"# Activate command for {backend} not available"
 

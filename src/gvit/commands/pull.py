@@ -108,7 +108,7 @@ def pull(
         )
     # Install any other dependency files
     other_deps = {k: v for k, v in to_reinstall.items() if k not in from_pyproject}
-    for dep_name, dep_path in other_deps:
+    for dep_name, dep_path in other_deps.items():
         install_dependencies_from_file(
             venv_name=venv_name,
             backend=env['environment']['backend'],

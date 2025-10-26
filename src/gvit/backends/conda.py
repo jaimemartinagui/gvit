@@ -52,25 +52,26 @@ class CondaBackend:
             if force:
                 typer.secho(f"⚠️  Environment '{venv_name}' already exists. Removing it...", fg=typer.colors.YELLOW)
                 self.delete_venv(venv_name, verbose)
-            typer.secho(f"\n  ⚠️  Environment '{venv_name}' already exists. What would you like to do?", fg=typer.colors.YELLOW)
-            choice = typer.prompt(
-                "    [1] Use a different name (auto-generate)\n"
-                "    [2] Overwrite existing environment\n"
-                "    [3] Abort\n"
-                "  Select option",
-                type=int,
-                default=1
-            )
-            match choice:
-                case 1:
-                    venv_name = self.get_unique_venv_name(venv_name)
-                    typer.echo(f'  Using environment name "{venv_name}"...', nl=False)
-                case 2:
-                    typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
-                    self.delete_venv(venv_name, verbose)
-                case _:
-                    typer.secho("  Aborted!", fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
+            else:
+                typer.secho(f"\n  ⚠️  Environment '{venv_name}' already exists. What would you like to do?", fg=typer.colors.YELLOW)
+                choice = typer.prompt(
+                    "    [1] Use a different name (auto-generate)\n"
+                    "    [2] Overwrite existing environment\n"
+                    "    [3] Abort\n"
+                    "  Select option",
+                    type=int,
+                    default=1
+                )
+                match choice:
+                    case 1:
+                        venv_name = self.get_unique_venv_name(venv_name)
+                        typer.echo(f'  Using environment name "{venv_name}"...', nl=False)
+                    case 2:
+                        typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
+                        self.delete_venv(venv_name, verbose)
+                    case _:
+                        typer.secho("  Aborted!", fg=typer.colors.RED)
+                        raise typer.Exit(code=1)
         self._create_venv(venv_name, python, verbose)
         return venv_name
 
