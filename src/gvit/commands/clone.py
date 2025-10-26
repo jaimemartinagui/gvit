@@ -60,7 +60,7 @@ def clone(
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    venv_name = create_venv(venv_name, backend, python, force, verbose)
+    venv_name = create_venv(venv_name, target_dir, backend, python, force, verbose)
 
     # 5. Install dependencies
     if no_deps:

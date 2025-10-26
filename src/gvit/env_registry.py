@@ -26,6 +26,7 @@ class EnvRegistry:
     def save_environment_info(
         self,
         venv_name: str,
+        venv_path: str,
         repo_path: str,
         repo_url: str,
         backend: str,
@@ -42,6 +43,7 @@ class EnvRegistry:
             "environment": {
                 "name": venv_name,
                 "backend": backend,
+                "path": venv_path,
                 "python": python,
                 "created_at": datetime.now().isoformat(),
             },

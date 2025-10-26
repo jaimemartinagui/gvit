@@ -14,6 +14,7 @@ from gvit.utils.utils import (
     load_local_config,
     save_local_config,
     get_backend,
+    get_venv_name,
     get_python,
     get_base_deps
 )
@@ -45,6 +46,7 @@ def setup(
         ).strip()
     validate_backend(backend)
     conda_path = None
+    venv_name = None
     if backend == "conda":
         conda_backend = CondaBackend()
         conda_path = conda_backend.path
@@ -54,6 +56,11 @@ def setup(
                 "You can also specify the path manually in your configuration file under "
                 "`backends.conda.path`."
             )
+    elif backend == "venv":
+        venv_name = typer.prompt(
+            f"- Select default virtual environment name",
+            default=get_venv_name(config),
+        ).strip()
 
     if python is None:
         python = typer.prompt(
@@ -68,9 +75,9 @@ def setup(
             default=get_base_deps(config),
         ).strip()
 
-    config = _get_updated_local_config(backend, python, base_deps, conda_path)
+    config = _get_updated_local_config(backend, python, base_deps, conda_path, venv_name)
 
-    typer.secho("\nSaving configuration...", nl=False, fg=typer.colors.GREEN)
+    typer.echo("\nSaving configuration...", nl=False)
     save_local_config(config)
     time.sleep(FAKE_SLEEP_TIME)
     typer.echo("✅")
@@ -197,25 +204,26 @@ def show() -> None:
 
 
 def _get_updated_local_config(
-    backend: str, python: str, base_deps: str, conda_path: str | None
+    backend: str, python: str, base_deps: str, conda_path: str | None, venv_name: str | None
 ) -> LocalConfig:
-    """Function to build the local configuration file."""
-    gvit_config = {
+    """Build the local configuration file, preserving existing extra deps."""
+    existing_config = load_local_config()
+    config = {
         "gvit": {
             "backend": backend,
             "python": python,
-        }
-    }
-    deps_config = {
+        },
         "deps": {
             "base": base_deps,
+            # Preserve existing extra deps (dev, test, etc.)
+            **{k: v for k, v in existing_config.get("deps", {}).items() if k != "base"}
         }
     }
-    backends_config = {
-        "backends": {
-            "conda": {
-                "path": conda_path
-            }
-        }
-    } if conda_path else {}
-    return cast(LocalConfig, {**gvit_config, **deps_config, **backends_config})
+    if conda_path or venv_name:
+        config["backends"] = existing_config.get("backends", {})
+        if conda_path:
+            config["backends"]["conda"] = {"path": conda_path}
+        if venv_name:
+            config["backends"]["venv"] = {"name": venv_name}
+
+    return cast(LocalConfig, config)

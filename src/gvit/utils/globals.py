@@ -12,15 +12,16 @@ ENVS_DIR = LOCAL_CONFIG_DIR / "envs"
 REPO_CONFIG_FILE = ".gvit.toml"
 FAKE_SLEEP_TIME = 0.75
 
-DEFAULT_BACKEND = "conda"
+DEFAULT_BACKEND = "venv"
+DEFAULT_VENV_NAME = ".venv"
 DEFAULT_PYTHON = "3.11"
 DEFAULT_BASE_DEPS = "requirements.txt"
 DEFAULT_VERBOSE = False
 
 SUPPORTED_BACKENDS = [
-    # "venv",
-    # "virtualenv",
+    "venv",
     "conda",
+    # "virtualenv",
     # "pyenv",
     # "pipenv"
 ]

@@ -1,5 +1,5 @@
 """
-Module with the Conda backend class.
+Module with the conda backend class.
 """
 
 from pathlib import Path

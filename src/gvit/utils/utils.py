@@ -13,6 +13,7 @@ from gvit.utils.globals import (
     LOCAL_CONFIG_FILE,
     REPO_CONFIG_FILE,
     DEFAULT_BACKEND,
+    DEFAULT_VENV_NAME,
     DEFAULT_PYTHON,
     DEFAULT_BASE_DEPS,
     DEFAULT_VERBOSE
@@ -92,6 +93,11 @@ def get_extra_deps(config: LocalConfig | RepoConfig) -> dict:
 def get_verbose(config: LocalConfig) -> bool:
     """Function to get the verbose from the config."""
     return config.get("gvit", {}).get("verbose", DEFAULT_VERBOSE)
+
+
+def get_venv_name(config: LocalConfig) -> str:
+    """Function to get the venv name from the config (for venv backend)."""
+    return config.get("backends", {}).get("venv", {}).get("name", DEFAULT_VENV_NAME)
 
 
 def extract_repo_name_from_url(repo_url: str) -> str:

@@ -60,11 +60,11 @@ gvit setup
 * 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files
 * 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`)
 * 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes
-* 🧼 **Cleans orphaned environments** automatically with `prune` command
+* 🧘 **Cleans orphaned environments** automatically with `prune` command
 * 🌳 **Visual command tree** to explore available commands
 * ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
-* 🐍 **Conda backend support** (venv and virtualenv coming soon)
+* 🐍 **Multiple backends**: `venv` (built-in) and `conda` support
 
 ---
 
@@ -95,7 +95,9 @@ gvit config setup
 Or specify options directly:
 
 ```bash
-gvit config setup --backend conda --python 3.11 --base-deps requirements.txt
+gvit config setup --backend venv --python 3.11 --base-deps requirements.txt
+# or use conda
+gvit config setup --backend conda --python 3.11
 ```
 
 ### Clone a Repository
@@ -260,8 +262,8 @@ gvit tree
 ### Environment Setup Process (common to all commands)
 
 3. **Creates virtual environment** using your preferred backend:
-   - Currently: `conda`
-   - Coming soon: `venv`, `virtualenv`
+   - **`venv`**: Python's built-in virtualenv (creates `.venv/` in repo)
+   - **`conda`**: Conda environments (centralized management)
 4. **Resolves dependencies** with priority system:
    - CLI arguments (highest priority)
    - Repository config (`.gvit.toml`)
@@ -290,13 +292,16 @@ Global preferences: `~/.config/gvit/config.toml`
 
 ```toml
 [gvit]
-backend = "conda"
+backend = "venv"  # or "conda"
 python = "3.11"
 
 [deps]
 base = "requirements.txt"
 dev = "requirements-dev.txt"
 test = "requirements-test.txt"
+
+[backends.venv]
+name = ".venv"  # Directory name for venv (default: .venv)
 
 [backends.conda]
 path = "/path/to/conda"  # Optional: custom conda path
@@ -370,6 +375,7 @@ gvit/
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
 │   ├── backends/
+│   │   ├── venv.py         # Venv backend implementation
 │   │   └── conda.py        # Conda backend implementation
 │   ├── utils/
 │   │   ├── exceptions.py   # Custom exceptions
@@ -394,6 +400,7 @@ gvit/
 | **Setup command** | ✅ | Create environment for existing repositories |
 | **Pull command** | ✅ | Smart git pull with automatic dependency sync |
 | **Tree command** | ✅ | Visual command structure explorer |
+| **Venv backend** | ✅ | Python's built-in venv support |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
 | **Environment registry** | ✅ | Track environments with metadata and dependency hashes |
@@ -410,7 +417,7 @@ gvit/
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| **0.1.0** | 📋 Planned | Support for `venv` and `virtualenv` backends |
+| **0.1.0** | 📋 Planned | Support for `virtualenv` backend |
 | **0.2.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
 | **0.3.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
 | **0.4.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
@@ -426,8 +433,8 @@ gvit/
 # Install gvit
 pipx install gvit
 
-# Configure defaults
-gvit config setup --backend conda --python 3.11
+# Configure defaults (use venv or conda)
+gvit config setup --backend venv --python 3.11
 
 # Add common dependency groups
 gvit config add-extra-deps dev requirements-dev.txt
@@ -563,6 +570,7 @@ gvit tree
 # │   ├── list
 # │   ├── prune
 # │   └── show
+# ├── pull
 # ├── init
 # ├── setup
 # └── tree
@@ -574,8 +582,8 @@ gvit tree
 
 Contributions are welcome! Areas we'd love help with:
 
-- Additional backends (venv, virtualenv, pyenv)
-- `pull` and `checkout` commands
+- Additional backends (virtualenv, pyenv)
+- `checkout` and other commands
 - Cross-platform testing
 - Documentation improvements
 

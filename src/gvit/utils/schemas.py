@@ -9,8 +9,13 @@ class CondaConfig(TypedDict):
     path: str
 
 
+class VenvConfig(TypedDict):
+    name: str
+
+
 class BackendsConfig(TypedDict):
     conda: NotRequired[CondaConfig]
+    venv: NotRequired[VenvConfig]
 
 
 class GvitLocalConfig(TypedDict):
@@ -50,6 +55,7 @@ class EnvRegistryEnvironment(TypedDict):
     """Schema for environment section in registry file."""
     name: str
     backend: str
+    path: str
     python: str
     created_at: str  # ISO format datetime string
 

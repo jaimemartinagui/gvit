@@ -4,9 +4,12 @@ Module for the "gvit envs" group of commands.
 
 import typer
 
+from pathlib import Path
+
 from gvit.env_registry import EnvRegistry
 from gvit.utils.globals import ENVS_DIR
 from gvit.backends.conda import CondaBackend
+from gvit.backends.venv import VenvBackend
 
 
 def list_() -> None:
@@ -28,6 +31,9 @@ def list_() -> None:
             if backend == "conda":
                 conda_backend = CondaBackend()
                 activate_cmd = conda_backend.get_activate_cmd(env_name)
+            elif backend == "venv":
+                venv_backend = VenvBackend()
+                activate_cmd = venv_backend.get_activate_cmd(env_name, Path(repo_path))
             else:
                 activate_cmd = f"# Activate command for {backend} not available"
 
@@ -55,9 +61,13 @@ def delete(
         return None
 
     typer.echo(f'- Removing environment "{venv_name}" backend...', nl=False)
-    if env_info["environment"]["backend"] == "conda":
+    backend = env_info["environment"]["backend"]
+    if backend == "conda":
         conda_backend = CondaBackend()
         conda_backend.delete_environment(venv_name, verbose)
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        venv_backend.delete_environment(venv_name, Path(env_info["repository"]["path"]), verbose)
     typer.echo("✅")
 
     typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
@@ -101,14 +111,17 @@ def prune(
         typer.echo(f'\n- Pruning "{env_name}" environment:')
 
         typer.echo("  Deleting backend...", nl=False)
+        backend = env_info["environment"]["backend"]
         try:
-            if env_info["environment"]["backend"] == "conda":
+            if backend == "conda":
                 conda_backend = CondaBackend()
                 if conda_backend.environment_exists(env_name):
                     conda_backend.delete_environment(env_name, verbose=verbose)
                     typer.echo("✅")
                 else:
                     typer.secho('⚠️  Environment not found in backend', fg=typer.colors.YELLOW)
+            elif backend == "venv":
+                typer.secho('⚠️  Repository deleted, venv was already removed', fg=typer.colors.YELLOW)
         except Exception:
             errors_backend.append(env_name)
             continue
