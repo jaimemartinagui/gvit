@@ -72,7 +72,9 @@ class CondaBackend:
                     case _:
                         typer.secho("  Aborted!", fg=typer.colors.RED)
                         raise typer.Exit(code=1)
+
         self._create_venv(venv_name, python, verbose)
+
         return venv_name
 
     def install_dependencies(

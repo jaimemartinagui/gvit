@@ -19,8 +19,6 @@ class VenvBackend:
         self, venv_name: str, repo_path: Path, python: str, force: bool, verbose: bool = False
     ) -> str:
         """Create a virtual environment in the repository directory."""
-        venv_path = repo_path / venv_name
-
         if self.venv_exists(venv_name, repo_path):
             if force:
                 typer.secho(f'⚠️  Environment "{venv_name}" already exists. Removing it...', fg=typer.colors.YELLOW)
@@ -41,7 +39,7 @@ class VenvBackend:
                     typer.secho("  Aborted!", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
 
-        self._create_venv(venv_path, python, verbose)
+        self._create_venv(str(repo_path / venv_name), python, verbose)
         self._ensure_gitignore(venv_name, repo_path)
 
         return venv_name
@@ -66,20 +64,18 @@ class VenvBackend:
     ) -> bool:
         """Install dependencies in the venv using pip."""
         typer.echo(f'  Group "{deps_group_name}"...', nl=False)
-        
+
         deps_path = deps_path if deps_path.is_absolute() else repo_path / deps_path
         if not deps_path.exists():
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
 
-        venv_path = repo_path / venv_name
-        pip_executable = self._get_pip_executable(venv_path)
-        
+        pip_path = self._get_pip_executable_path(repo_path / venv_name)
         if deps_path.name == "pyproject.toml":
-            install_cmd = [str(pip_executable), "install", "-e"]
+            install_cmd = [pip_path, "install", "-e"]
             install_cmd.append(f".[{','.join(extras)}]" if extras else ".")
         elif deps_path.suffix in [".txt", ".in"]:
-            install_cmd = [str(pip_executable), "install", "-r", str(deps_path)]
+            install_cmd = [pip_path, "install", "-r", str(deps_path)]
         else:
             typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
             return False
@@ -139,12 +135,12 @@ class VenvBackend:
         """Get the absolute path to the venv directory."""
         return str((repo_path / venv_name).resolve())
 
-    def _create_venv(self, venv_path: Path, python: str, verbose: bool = False) -> None:
+    def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using the venv module or python -m venv."""
         try:
             python_cmd = self._get_python_cmd(python)
             result = subprocess.run(
-                [python_cmd, "-m", "venv", str(venv_path)],
+                [python_cmd, "-m", "venv", venv_path],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -158,26 +154,20 @@ class VenvBackend:
     def _get_python_cmd(self, python_version: str) -> str:
         """
         Get the python command for the specified version.
-        Tries: python{version}, python{major}.{minor}, python3, python
+        Tries: python{version} > python{major}.{minor} > python{major} > python > current python
+            Example: "3.11" -> try python3.11, python3, python.
         """
-        # Parse version (e.g., "3.11" -> try python3.11, python3, python)
         candidates = []
-        
+        candidates.append(f"python{python_version}")
         if "." in python_version:
-            # Full version specified (e.g., "3.11")
-            candidates.append(f"python{python_version}")
             major = python_version.split(".")[0]
             candidates.append(f"python{major}")
-        else:
-            # Just major version (e.g., "3")
-            candidates.append(f"python{python_version}")
-        
+
         # Fallbacks
         candidates.extend(["python3", "python"])
-        
-        for cmd in candidates:
+
+        for cmd in set(candidates):
             if shutil.which(cmd):
-                # Verify it matches the requested version
                 try:
                     result = subprocess.run(
                         [cmd, "--version"],
@@ -191,14 +181,22 @@ class VenvBackend:
                         return cmd
                 except subprocess.CalledProcessError:
                     continue
-        
+
         # If no match found, use current Python
-        typer.secho(f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})", fg=typer.colors.YELLOW)
+        typer.secho(
+            f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})",
+            fg=typer.colors.YELLOW
+        )
         return sys.executable
 
-    def _get_pip_executable(self, venv_path: Path) -> Path:
+    def _get_pip_executable_path(self, venv_path: Path) -> str:
         """Get the pip executable path inside the venv."""
-        return venv_path / "Scripts" / "pip.exe" if platform.system() == "Windows" else venv_path / "bin" / "pip"
+        pip_executable_path = (
+            venv_path / "Scripts" / "pip.exe"
+            if platform.system() == "Windows"
+            else venv_path / "bin" / "pip"
+        )
+        return str(pip_executable_path)
 
     def _ensure_gitignore(self, venv_name: str, repo_path: Path) -> None:
         """Add venv directory to .gitignore if not already present."""
