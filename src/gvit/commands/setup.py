@@ -56,45 +56,47 @@ def setup(
     local_config = load_local_config()
     verbose = verbose or get_verbose(local_config)
 
-    # 4. Get remote URL if it exists
-    repo_url = _get_remote_url(str(target_dir))
-    if repo_url:
-        typer.echo(f'- Repository URL: {repo_url}')
-
-    # 5. Load repo config
+    # 4. Load repo config
     repo_config = load_repo_config(str(target_dir))
 
-    # 6. Create virtual environment
+    # 5. Create virtual environment
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    registry_name, env_path = create_venv(venv_name, str(target_dir), backend, python, force, verbose)
+    registry_name, venv_name, venv_path = create_venv(venv_name, str(target_dir), backend, python, force, verbose)
 
-    # 7. Install dependencies
+    # 6. Install dependencies
     if no_deps:
         resolved_base_deps = None
         resolved_extra_deps = {}
         typer.echo("\n- Skipping dependency installation...✅")
     else:
         resolved_base_deps, resolved_extra_deps = install_dependencies(
-            registry_name, backend, str(target_dir), base_deps, extra_deps, repo_config, local_config, verbose
+            venv_name=venv_name,
+            backend=backend,
+            repo_path=str(target_dir),
+            base_deps=base_deps,
+            extra_deps=extra_deps,
+            repo_config=repo_config,
+            local_config=local_config,
+            verbose=verbose
         )
 
-    # 8. Save environment info to registry
+    # 7. Save environment info to registry
     env_registry = EnvRegistry()
-    env_registry.save_environment_info(
+    env_registry.save_venv_info(
         venv_name=registry_name,
-        venv_path=env_path,
+        venv_path=venv_path,
         repo_path=str(target_dir),
-        repo_url=repo_url or "",
+        repo_url=_get_remote_url(str(target_dir)),
         backend=backend,
         python=python,
         base_deps=resolved_base_deps,
         extra_deps=resolved_extra_deps
     )
 
-    # 9. Summary message
+    # 8. Summary message
     show_summary_message(registry_name)
 
 

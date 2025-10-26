@@ -58,7 +58,7 @@ def clone(
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    registry_name, env_path = create_venv(venv_name, target_dir, backend, python, force, verbose)
+    registry_name, venv_name, venv_path = create_venv(venv_name, target_dir, backend, python, force, verbose)
 
     # 5. Install dependencies
     if no_deps:
@@ -67,14 +67,21 @@ def clone(
         typer.echo("\n- Skipping dependency installation...✅")
     else:
         resolved_base_deps, resolved_extra_deps = install_dependencies(
-            registry_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
+            venv_name=venv_name,
+            backend=backend,
+            repo_path=target_dir,
+            base_deps=base_deps,
+            extra_deps=extra_deps,
+            repo_config=repo_config,
+            local_config=local_config,
+            verbose=verbose
         )
 
     # 6. Save environment info to registry
     env_registry = EnvRegistry()
-    env_registry.save_environment_info(
+    env_registry.save_venv_info(
         venv_name=registry_name,
-        venv_path=env_path,
+        venv_path=venv_path,
         repo_path=target_dir,
         repo_url=repo_url,
         backend=backend,

@@ -18,15 +18,15 @@ class CondaBackend:
     def __init__(self) -> None:
         self.path = self._get_path() or "conda"
 
-    def get_unique_environment_name(self, venv_name: str) -> str:
+    def get_unique_venv_name(self, venv_name: str) -> str:
         """
         Generate a unique environment name by adding numeric suffix if needed.
         Example: venv_name, venv_name-1, venv_name-2, etc.
         """
-        if not self.environment_exists(venv_name):
+        if not self.venv_exists(venv_name):
             return venv_name
         counter = 1
-        while self.environment_exists(f"{venv_name}-{counter}"):
+        while self.venv_exists(f"{venv_name}-{counter}"):
             counter += 1
         return f"{venv_name}-{counter}"
 
@@ -48,10 +48,10 @@ class CondaBackend:
         Function to create the virtual environment using conda.
         It handles the case where an environment with the same name already exists.
         """
-        if self.environment_exists(venv_name):
+        if self.venv_exists(venv_name):
             if force:
                 typer.secho(f"⚠️  Environment '{venv_name}' already exists. Removing it...", fg=typer.colors.YELLOW)
-                self.delete_environment(venv_name, verbose)
+                self.delete_venv(venv_name, verbose)
             typer.secho(f"\n  ⚠️  Environment '{venv_name}' already exists. What would you like to do?", fg=typer.colors.YELLOW)
             choice = typer.prompt(
                 "    [1] Use a different name (auto-generate)\n"
@@ -63,11 +63,11 @@ class CondaBackend:
             )
             match choice:
                 case 1:
-                    venv_name = self.get_unique_environment_name(venv_name)
+                    venv_name = self.get_unique_venv_name(venv_name)
                     typer.echo(f'  Using environment name "{venv_name}"...', nl=False)
                 case 2:
                     typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
-                    self.delete_environment(venv_name, verbose)
+                    self.delete_venv(venv_name, verbose)
                 case _:
                     typer.secho("  Aborted!", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
@@ -77,15 +77,15 @@ class CondaBackend:
     def install_dependencies(
         self,
         venv_name: str,
+        repo_path: Path,
         deps_group_name: str,
         deps_path: Path,
-        project_dir: Path,
         extras: list[str] | None = None,
         verbose: bool = False
     ) -> bool:
         """Method to install the dependencies from the provided deps_path."""
         typer.echo(f'  Group "{deps_group_name}"...', nl=False)
-        deps_path = deps_path if deps_path.is_absolute() else project_dir / deps_path
+        deps_path = deps_path if deps_path.is_absolute() else repo_path / deps_path
         if not deps_path.exists():
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
@@ -105,7 +105,7 @@ class CondaBackend:
                 check=True,
                 capture_output=True,
                 text=True,
-                cwd=project_dir
+                cwd=repo_path
             )
             if verbose and result.stdout:
                 typer.echo(result.stdout)
@@ -115,7 +115,7 @@ class CondaBackend:
             typer.secho(f'❗ Failed to install "{deps_path}" dependencies: {e}', fg=typer.colors.RED)
             return False
 
-    def environment_exists(self, venv_name: str) -> bool:
+    def venv_exists(self, venv_name: str) -> bool:
         """Check if a conda environment with the given name already exists."""
         try:
             result = subprocess.run(
@@ -130,7 +130,7 @@ class CondaBackend:
         except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
             return False
 
-    def delete_environment(self, venv_name: str, verbose: bool = False) -> None:
+    def delete_venv(self, venv_name: str, verbose: bool = False) -> None:
         """Remove a conda environment."""
         try:
             result = subprocess.run(
@@ -149,7 +149,7 @@ class CondaBackend:
         """Method to get the command to activate the environment."""
         return f"conda activate {venv_name}"
 
-    def get_env_path(self, venv_name: str) -> str:
+    def get_venv_path(self, venv_name: str) -> str:
         """Get the absolute path to the conda environment directory."""
         try:
             result = subprocess.run(

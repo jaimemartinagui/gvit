@@ -50,8 +50,9 @@ def pull(
     envs = [env for env in env_registry.get_environments() if Path(env['repository']['path']) == target_dir]
     if envs:
         env = envs[0]
-        venv_name = env["environment"]["name"]
-        typer.secho(f'environment found: "{venv_name}". ✅', fg=typer.colors.GREEN)
+        registry_name = env["environment"]["name"]
+        venv_name = Path(env["environment"]["path"]).name
+        typer.secho(f'environment found: "{registry_name}". ✅', fg=typer.colors.GREEN)
     else:
         env = None
         typer.secho(
@@ -80,7 +81,7 @@ def pull(
         to_reinstall = current_deps
     else:
         typer.echo("\n- Searching for changes in dependencies...", nl=False)
-        modified_deps_groups = env_registry.get_modified_deps_groups(venv_name, current_deps)
+        modified_deps_groups = env_registry.get_modified_deps_groups(registry_name, current_deps)
         to_reinstall = {k: v for k, v in current_deps.items() if k in modified_deps_groups}
         if not to_reinstall:
             typer.secho("environment is up to date ✅", fg=typer.colors.GREEN)
@@ -97,18 +98,29 @@ def pull(
         deps_group_name = f"base (extras: {','.join(extras)})" if extras else "base"
         dep_path = from_pyproject[list(from_pyproject)[0]]
         install_dependencies_from_file(
-            venv_name, env['environment']['backend'], str(target_dir), deps_group_name, dep_path, extras, verbose=verbose
+            venv_name=venv_name,
+            backend=env['environment']['backend'],
+            repo_path=str(target_dir),
+            deps_group_name=deps_group_name,
+            deps_path=dep_path,
+            extra_deps=extras,
+            verbose=verbose
         )
     # Install any other dependency files
     other_deps = {k: v for k, v in to_reinstall.items() if k not in from_pyproject}
     for dep_name, dep_path in other_deps:
         install_dependencies_from_file(
-            venv_name, env['environment']['backend'], str(target_dir), dep_name, dep_path, verbose=verbose
+            venv_name=venv_name,
+            backend=env['environment']['backend'],
+            repo_path=str(target_dir),
+            deps_group_name=dep_name,
+            deps_path=dep_path,
+            verbose=verbose
         )
 
     # 10. Update registry with new hashes
-    env_registry.save_environment_info(
-        venv_name=venv_name,
+    env_registry.save_venv_info(
+        venv_name=registry_name,
         venv_path=env['environment']['path'],
         repo_path=str(target_dir),
         repo_url=env['repository']['url'],

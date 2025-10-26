@@ -15,20 +15,16 @@ import typer
 class VenvBackend:
     """Class for operations with the venv backend."""
 
-    def create_venv(self, venv_name: str, repo_path: Path, python: str, force: bool, verbose: bool = False) -> str:
-        """
-        Create a virtual environment in the repository directory.
-        Returns the unique registry name (not the directory name).
-
-        Directory: repo/.venv/
-        Registry: myrepo-abc123.toml (unique per repo path)
-        """
+    def create_venv(
+        self, venv_name: str, repo_path: Path, python: str, force: bool, verbose: bool = False
+    ) -> str:
+        """Create a virtual environment in the repository directory."""
         venv_path = repo_path / venv_name
 
-        if self.environment_exists(venv_name, repo_path):
+        if self.venv_exists(venv_name, repo_path):
             if force:
                 typer.secho(f'⚠️  Environment "{venv_name}" already exists. Removing it...', fg=typer.colors.YELLOW)
-                self.delete_environment(venv_name, repo_path, verbose)
+                self.delete_venv(venv_name, repo_path, verbose)
             else:
                 typer.secho(f'\n  ⚠️  Environment "{venv_name}" already exists. What would you like to do?', fg=typer.colors.YELLOW)
                 choice = typer.prompt(
@@ -40,17 +36,24 @@ class VenvBackend:
                 )
                 if choice == 1:
                     typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
-                    self.delete_environment(venv_name, repo_path, verbose)
+                    self.delete_venv(venv_name, repo_path, verbose)
                 else:
                     typer.secho("  Aborted!", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
 
         self._create_venv(venv_path, python, verbose)
         self._ensure_gitignore(venv_name, repo_path)
-        
-        # Return unique registry name to avoid collisions
-        registry_name = self._generate_unique_venv_registry_name(str(repo_path))
-        return registry_name
+
+        return venv_name
+
+    def generate_unique_venv_registry_name(self, venv_path: Path) -> str:
+        """
+        Generate a unique registry name for venv environments.
+        Uses the project name (parent of the venv_path) + short hash of absolute path to avoid collisions.
+        Example: myrepo-a1b2c3
+        """
+        path_hash = hashlib.sha256(str(venv_path).encode()).hexdigest()[:6]
+        return f"{venv_path.parent.name}-{path_hash}"
 
     def install_dependencies(
         self,
@@ -58,14 +61,13 @@ class VenvBackend:
         repo_path: Path,
         deps_group_name: str,
         deps_path: Path,
-        project_dir: Path,
         extras: list[str] | None = None,
         verbose: bool = False
     ) -> bool:
         """Install dependencies in the venv using pip."""
         typer.echo(f'  Group "{deps_group_name}"...', nl=False)
         
-        deps_path = deps_path if deps_path.is_absolute() else project_dir / deps_path
+        deps_path = deps_path if deps_path.is_absolute() else repo_path / deps_path
         if not deps_path.exists():
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
@@ -88,7 +90,7 @@ class VenvBackend:
                 check=True,
                 capture_output=True,
                 text=True,
-                cwd=project_dir
+                cwd=repo_path
             )
             if verbose and result.stdout:
                 typer.echo(result.stdout)
@@ -98,7 +100,7 @@ class VenvBackend:
             typer.secho(f'❗ Failed to install "{deps_path}" dependencies: {e}', fg=typer.colors.RED)
             return False
 
-    def environment_exists(self, venv_name: str, repo_path: Path) -> bool:
+    def venv_exists(self, venv_name: str, repo_path: Path) -> bool:
         """Check if the venv directory exists and is valid."""
         venv_path = repo_path / venv_name
         if not venv_path.exists():
@@ -109,7 +111,7 @@ class VenvBackend:
         else:
             return (venv_path / "bin" / "python").exists()
 
-    def delete_environment(self, venv_name: str, repo_path: Path, verbose: bool = False) -> None:
+    def delete_venv(self, venv_name: str, repo_path: Path, verbose: bool = False) -> None:
         """Remove the venv directory."""
         venv_path = repo_path / venv_name
         
@@ -134,15 +136,13 @@ class VenvBackend:
             else f"source {venv_path}/bin/activate"
         )
 
-    def get_env_path(self, venv_name: str, repo_path: Path) -> str:
+    def get_venv_path(self, venv_name: str, repo_path: Path) -> str:
         """Get the absolute path to the venv directory."""
         return str((repo_path / venv_name).resolve())
 
-    def _create_venv(self, venv_path: Path, python: str, verbose: bool) -> None:
+    def _create_venv(self, venv_path: Path, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using the venv module or python -m venv."""
-        # Determine python executable to use
         python_cmd = self._get_python_cmd(python)
-        
         try:
             result = subprocess.run(
                 [python_cmd, "-m", "venv", str(venv_path)],
@@ -219,15 +219,3 @@ class VenvBackend:
         if venv_name not in lines and f"/{venv_name}" not in lines:
             lines.append(venv_name)
             gitignore_path.write_text("\n".join(lines) + "\n")
-
-    def _generate_unique_venv_registry_name(self, repo_path: str, base_name: str | None = None) -> str:
-        """
-        Generate a unique registry name for venv environments.
-        
-        Uses repo name + short hash of absolute path to avoid collisions.
-        Example: myrepo-a1b2c3
-        """        
-        repo_abs_path = Path(repo_path).resolve()
-        name = base_name or repo_abs_path.name
-        path_hash = hashlib.sha256(str(repo_abs_path).encode()).hexdigest()[:6]
-        return f"{name}-{path_hash}"

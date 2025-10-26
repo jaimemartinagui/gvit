@@ -23,7 +23,7 @@ class EnvRegistry:
     def __init__(self) -> None:
         self._ensure_envs_dir()
 
-    def save_environment_info(
+    def save_venv_info(
         self,
         venv_name: str,
         venv_path: str,
@@ -39,7 +39,7 @@ class EnvRegistry:
         env_file = ENVS_DIR / f"{venv_name}.toml"
         repo_abs_path = Path(repo_path).resolve()
 
-        env_info: RegistryFile = {
+        venv_info: RegistryFile = {
             "environment": {
                 "name": venv_name,
                 "backend": backend,
@@ -66,10 +66,10 @@ class EnvRegistry:
                     "installed_at": datetime.now().isoformat(),
                 }
 
-            env_info["deps"] = cast(RegistryDeps, deps_dict)
+            venv_info["deps"] = cast(RegistryDeps, deps_dict)
 
         with open(env_file, "w") as f:
-            toml.dump(env_info, f)
+            toml.dump(venv_info, f)
 
         typer.echo("✅")
 
@@ -78,16 +78,16 @@ class EnvRegistry:
         Check if dependency files have changed since installation.            
         Returns a list of dependency group names that have changed.
         """
-        env_info = self.load_environment_info(venv_name)
-        if not env_info:
+        venv_info = self.load_environment_info(venv_name)
+        if not venv_info:
             return []
 
-        deps = env_info.get("deps", {})
+        deps = venv_info.get("deps", {})
         installed = deps.get("installed", {})
         if not deps or not installed:
             return []
 
-        repo_path = Path(env_info["repository"]["path"])
+        repo_path = Path(venv_info["repository"]["path"])
         modified_deps_groups = []
 
         for dep_name, dep_path in current_deps.items():
@@ -121,7 +121,7 @@ class EnvRegistry:
         """List all registered environments."""
         return sorted([f.stem for f in ENVS_DIR.glob("*.toml")]) if ENVS_DIR.exists() else []
 
-    def environment_exists_in_registry(self, venv_name: str) -> bool:
+    def venv_exists_in_registry(self, venv_name: str) -> bool:
         """Check if environment is registered."""
         env_file = ENVS_DIR / f"{venv_name}.toml"
         return env_file.exists()

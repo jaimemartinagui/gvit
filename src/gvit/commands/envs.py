@@ -15,7 +15,6 @@ from gvit.backends.venv import VenvBackend
 def list_() -> None:
     """List the environments tracked in the gvit environment registry."""
     env_registry = EnvRegistry()
-    # envs = env_registry.list_environments()
     envs = env_registry.get_environments()
     if not envs:
         typer.echo("No environments in registry.")
@@ -23,29 +22,29 @@ def list_() -> None:
 
     typer.echo("Tracked environments:")
     for env in envs:
-        env_name = env["environment"]["name"]
-        env_path = env["environment"]["path"]
+        venv_name = env["environment"]["name"]
+        venv_path = env["environment"]["path"]
         backend = env["environment"]["backend"]
         python = env["environment"]["python"]
         repo_path = env["repository"]["path"]
-        env_registry_file = ENVS_DIR / f"{env_name}.toml"
+        env_registry_file = ENVS_DIR / f"{venv_name}.toml"
 
         if backend == "conda":
             conda_backend = CondaBackend()
-            activate_cmd = conda_backend.get_activate_cmd(env_name)
+            activate_cmd = conda_backend.get_activate_cmd(venv_name)
         elif backend == "venv":
             venv_backend = VenvBackend()
-            activate_cmd = venv_backend.get_activate_cmd(Path(env_path))
+            activate_cmd = venv_backend.get_activate_cmd(Path(venv_path))
         else:
             activate_cmd = f"# Activate command for {backend} not available"
 
-        typer.secho(f"\n  • {env_name}", fg=typer.colors.CYAN, bold=True)
-        typer.echo(f"    Backend:      {backend}")
-        typer.echo(f"    Path:         {env_path}")
-        typer.echo(f"    Python:       {python}")
-        typer.echo(f"    Repository:   {repo_path}")
-        typer.echo(f"    Registry:     {env_registry_file}")
-        typer.secho(f"    Command:    ", nl=False, dim=True)
+        typer.secho(f"\n  • {venv_name}", fg=typer.colors.CYAN, bold=True)
+        typer.echo(f"    Backend:       {backend}")
+        typer.echo(f"    Python:        {python}")
+        typer.echo(f"    Environment:   {venv_path}")
+        typer.echo(f"    Repository:    {repo_path}")
+        typer.echo(f"    Registry:      {env_registry_file}")
+        typer.secho(f"    Command:       ", nl=False, dim=True)
         typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
 
 
@@ -58,25 +57,21 @@ def delete(
     If the backend deletion fails, do not remove the registry to keep track of it.
     """
     env_registry = EnvRegistry()
-    env_info = env_registry.load_environment_info(venv_name)
-    if env_info is None:
+    venv_info = env_registry.load_environment_info(venv_name)
+    if venv_info is None:
         typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
         return None
 
     typer.echo(f'- Removing environment "{venv_name}" backend...', nl=False)
-    backend = env_info["environment"]["backend"]
+    backend = venv_info["environment"]["backend"]
     if backend == "conda":
         conda_backend = CondaBackend()
-        conda_backend.delete_environment(venv_name, verbose)
+        conda_backend.delete_venv(venv_name, verbose)
     elif backend == "venv":
-        # Get venv_dir from registry path
-        if env_path := env_info.get("environment", {}).get("path"):
-            venv_dir = Path(env_path).name
-        else:
-            venv_dir = DEFAULT_VENV_NAME
+        repo_path = Path(venv_info["repository"]["path"])
         venv_backend = VenvBackend()
-        repo_path = Path(env_info["repository"]["path"])
-        venv_backend.delete_environment(venv_dir, repo_path, verbose)
+        venv_backend.delete_venv(Path(venv_info["environment"]["path"]).name, repo_path, verbose)
+
     typer.echo("✅")
     typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
     if env_registry.delete_environment_registry(venv_name):
@@ -101,8 +96,10 @@ def prune(
         return None
 
     typer.echo(f"found {len(orphaned_envs)} orphaned environment(s):\n")
-    for env_info in orphaned_envs:
-        typer.echo(f'  • {env_info["environment"]["name"]} ({env_info["environment"]["backend"]}) -> {env_info["repository"]["path"]}')
+    for venv_info in orphaned_envs:
+        typer.echo(
+            f'  • {venv_info["environment"]["name"]} ({venv_info["environment"]["backend"]}) -> {venv_info["repository"]["path"]}'
+        )
 
     if dry_run:
         typer.echo("\n[DRY RUN] No changes made. Run without --dry-run to actually prune.")
@@ -114,37 +111,37 @@ def prune(
 
     errors_registry = []
     errors_backend = []
-    for env_info in orphaned_envs:
-        env_name = env_info["environment"]["name"]
-        typer.echo(f'\n- Pruning "{env_name}" environment:')
+    for venv_info in orphaned_envs:
+        venv_name = venv_info["environment"]["name"]
+        typer.echo(f'\n- Pruning "{venv_name}" environment:')
 
         typer.echo("  Deleting backend...", nl=False)
-        backend = env_info["environment"]["backend"]
+        backend = venv_info["environment"]["backend"]
         try:
             if backend == "conda":
                 conda_backend = CondaBackend()
-                if conda_backend.environment_exists(env_name):
-                    conda_backend.delete_environment(env_name, verbose=verbose)
+                if conda_backend.venv_exists(venv_name):
+                    conda_backend.delete_venv(venv_name, verbose=verbose)
                     typer.echo("✅")
                 else:
                     typer.secho('⚠️  Environment not found in backend', fg=typer.colors.YELLOW)
             elif backend == "venv":
                 typer.secho('⚠️  Repository deleted, venv was already removed', fg=typer.colors.YELLOW)
         except Exception:
-            errors_backend.append(env_name)
+            errors_backend.append(venv_name)
             continue
 
         typer.echo("  Deleting registry...", nl=False)
-        if env_registry.delete_environment_registry(env_name):
+        if env_registry.delete_environment_registry(venv_name):
             typer.echo("✅")
         else:
-            errors_registry.append(env_name)
+            errors_registry.append(venv_name)
             typer.secho("❗ Failed to delete registry", fg=typer.colors.RED)
 
     pruned_envs = [
-        env_info["environment"]["name"]
-        for env_info in orphaned_envs
-        if env_info["environment"]["name"] not in errors_registry + errors_backend
+        venv_info["environment"]["name"]
+        for venv_info in orphaned_envs
+        if venv_info["environment"]["name"] not in errors_registry + errors_backend
     ]
     if pruned_envs:
         typer.echo(f"\n🎉 Pruned {len(pruned_envs)} environment(s).")
@@ -158,7 +155,7 @@ def show(venv_name: str = typer.Argument(help="Name of the environment to displa
     """Display the environment registry file for a specific environment."""
     env_registry = EnvRegistry()
 
-    if not env_registry.environment_exists_in_registry(venv_name):
+    if not env_registry.venv_exists_in_registry(venv_name):
         typer.secho(f'Environment "{venv_name}" not found in registry.', fg=typer.colors.YELLOW)
         return None
 
