@@ -3,7 +3,6 @@ Module for the "gvit clone" command.
 """
 
 import subprocess
-from pathlib import Path
 
 import typer
 
@@ -55,12 +54,11 @@ def clone(
     repo_config = load_repo_config(target_dir)
 
     # 4. Create virtual environment
-    venv_name = venv_name or Path(target_dir).name
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    venv_name = create_venv(venv_name, target_dir, backend, python, force, verbose)
+    registry_name, env_path = create_venv(venv_name, target_dir, backend, python, force, verbose)
 
     # 5. Install dependencies
     if no_deps:
@@ -69,13 +67,14 @@ def clone(
         typer.echo("\n- Skipping dependency installation...✅")
     else:
         resolved_base_deps, resolved_extra_deps = install_dependencies(
-            venv_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
+            registry_name, backend, target_dir, base_deps, extra_deps, repo_config, local_config, verbose
         )
 
     # 6. Save environment info to registry
     env_registry = EnvRegistry()
     env_registry.save_environment_info(
-        venv_name=venv_name,
+        venv_name=registry_name,
+        venv_path=env_path,
         repo_path=target_dir,
         repo_url=repo_url,
         backend=backend,
@@ -85,7 +84,7 @@ def clone(
     )
 
     # 7. Summary message
-    show_summary_message(venv_name, backend, target_dir)
+    show_summary_message(registry_name)
 
 
 def _clone_repo(repo_url: str, target_dir: str, verbose: bool, extra_args: list[str] | None = None) -> None:

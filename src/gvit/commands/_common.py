@@ -14,14 +14,16 @@ from gvit.utils.globals import DEFAULT_VENV_NAME
 from gvit.env_registry import EnvRegistry
 
 
-def create_venv(venv_name: str | None, repo_path: str, backend: str, python: str, force: bool, verbose: bool) -> tuple[str, str | None]:
+def create_venv(
+    venv_name: str | None, repo_path: str, backend: str, python: str, force: bool, verbose: bool
+) -> tuple[str, str]:
     """
     Create virtual environment for the repository.
 
     Returns:
-        tuple: (registry_name, venv_dir)
+        tuple: (registry_name, env_path)
             - registry_name: unique name for registry file
-            - venv_dir: actual directory name (only for venv backend, None for conda)
+            - env_path: absolute path to the environment directory
     """
     typer.echo(f'\n- Creating virtual environment {backend} - Python {python}', nl=False)
     typer.secho(" (this might take some time)", nl=False, fg=typer.colors.BLUE)
@@ -31,14 +33,15 @@ def create_venv(venv_name: str | None, repo_path: str, backend: str, python: str
         venv_name = venv_name or Path(repo_path).name
         conda_backend = CondaBackend()
         registry_name = conda_backend.create_venv(venv_name, python, force, verbose)
-        venv_dir = None
+        env_path = conda_backend.get_env_path(registry_name)
     elif backend == "venv":
         venv_dir = venv_name or DEFAULT_VENV_NAME
         venv_backend = VenvBackend()
         registry_name = venv_backend.create_venv(venv_dir, Path(repo_path), python, force, verbose)
+        env_path = venv_backend.get_env_path(venv_dir, Path(repo_path))
 
     typer.echo("✅")
-    return registry_name, venv_dir
+    return registry_name, env_path
 
 
 def install_dependencies(
@@ -86,26 +89,30 @@ def install_dependencies(
     return resolved_base if base_sucess else None, resolved_extras
 
 
-def show_summary_message(registry_name: str, backend: str, project_dir: str) -> None:
-    """Function to show the summary message of the process."""    
+def show_summary_message(registry_name: str) -> None:
+    """Function to show the summary message of the process."""
+    env_registry = EnvRegistry()
+    env_info = env_registry.load_environment_info(registry_name)
+    if not env_info:
+        return None
+    repository_path = env_info["repository"]["path"]
+    backend = env_info["environment"]["backend"]
+    environment_path = env_info["environment"]["path"]
     if backend == 'conda':
         conda_backend = CondaBackend()
         activate_cmd = conda_backend.get_activate_cmd(registry_name)
     elif backend == 'venv':
-        env_registry = EnvRegistry()
-        env_info = env_registry.load_environment_info(registry_name)
-        venv_dir = env_info.get("environment", {}).get("venv_dir", DEFAULT_VENV_NAME) if env_info else DEFAULT_VENV_NAME
         venv_backend = VenvBackend()
-        activate_cmd = venv_backend.get_activate_cmd(venv_dir, Path(project_dir))
+        activate_cmd = venv_backend.get_activate_cmd(Path(environment_path))
     else:
         activate_cmd = "# Activation command not available"
 
     typer.echo("\n🎉  Project setup complete!")
-    typer.echo(f"📁  Repository -> {project_dir}")
-    typer.echo(f"🐍  Environment ({backend}) -> {registry_name}")
-    typer.echo(f"📖  Registry -> ~/.config/gvit/envs/{registry_name}.toml")
+    typer.echo(f"📁  Repository -> {repository_path}")
+    typer.echo(f"🐍  Environment ({backend}) -> {environment_path}")
+    typer.echo(f"📖  Registry -> {registry_name} (~/.config/gvit/envs/{registry_name}.toml)")
     typer.echo("🚀  Ready to start working -> ", nl=False)
-    typer.secho(f'cd {project_dir} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
+    typer.secho(f'cd {repository_path} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
 
 
 def install_dependencies_from_file(
@@ -130,7 +137,11 @@ def install_dependencies_from_file(
     elif backend == "venv":
         env_registry = EnvRegistry()
         env_info = env_registry.load_environment_info(venv_name)
-        venv_dir = env_info.get("environment", {}).get("venv_dir", DEFAULT_VENV_NAME) if env_info else DEFAULT_VENV_NAME
+        if env_info and env_info.get("environment", {}).get("path"):
+            venv_path = Path(env_info["environment"]["path"])
+            venv_dir = venv_path.name
+        else:
+            venv_dir = DEFAULT_VENV_NAME
         venv_backend = VenvBackend()
         return venv_backend.install_dependencies(
             venv_dir, project_path, deps_group_name, deps_abs_path, project_path, extra_deps, verbose

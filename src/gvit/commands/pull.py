@@ -10,7 +10,7 @@ import typer
 from gvit.env_registry import EnvRegistry
 from gvit.utils.utils import load_local_config, load_repo_config, get_verbose, get_extra_deps
 from gvit.commands._common import install_dependencies_from_file
-from gvit.utils.schemas import EnvRegistryFile, RepoConfig
+from gvit.utils.schemas import RegistryFile, RepoConfig
 from gvit.utils.validators import validate_directory
 
 
@@ -109,6 +109,7 @@ def pull(
     # 10. Update registry with new hashes
     env_registry.save_environment_info(
         venv_name=venv_name,
+        venv_path=env['environment']['path'],
         repo_path=str(target_dir),
         repo_url=env['repository']['url'],
         backend=env['environment']['backend'],
@@ -139,7 +140,7 @@ def _pull_repo(repo_dir: str, verbose: bool = False, extra_args: list[str] | Non
 
 
 def _get_current_deps(
-    base_deps: str | None, extra_deps: str | None, repo_config: RepoConfig, env: EnvRegistryFile
+    base_deps: str | None, extra_deps: str | None, repo_config: RepoConfig, env: RegistryFile
 ) -> dict:
     """
     Function to get the current value for the base deps and extra_deps.

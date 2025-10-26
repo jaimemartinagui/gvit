@@ -149,6 +149,23 @@ class CondaBackend:
         """Method to get the command to activate the environment."""
         return f"conda activate {venv_name}"
 
+    def get_env_path(self, venv_name: str) -> str:
+        """Get the absolute path to the conda environment directory."""
+        try:
+            result = subprocess.run(
+                [self.path, "env", "list", "--json"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            envs_data = json.loads(result.stdout)
+            for env_path in envs_data.get("envs", []):
+                if Path(env_path).name == venv_name:
+                    return env_path
+            return ""
+        except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
+            return ""
+
     def _get_path(self) -> str | None:
         """Try to find the conda executable in PATH or common install locations."""
         if conda_path := shutil.which("conda"):

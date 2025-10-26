@@ -7,7 +7,7 @@ import typer
 from pathlib import Path
 
 from gvit.env_registry import EnvRegistry
-from gvit.utils.globals import ENVS_DIR
+from gvit.utils.globals import ENVS_DIR, DEFAULT_VENV_NAME
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
 
@@ -15,35 +15,38 @@ from gvit.backends.venv import VenvBackend
 def list_() -> None:
     """List the environments tracked in the gvit environment registry."""
     env_registry = EnvRegistry()
-    envs = env_registry.list_environments()
+    # envs = env_registry.list_environments()
+    envs = env_registry.get_environments()
     if not envs:
         typer.echo("No environments in registry.")
         return None
 
     typer.echo("Tracked environments:")
-    for env_name in envs:
-        if env_info := env_registry.load_environment_info(env_name):
-            backend = env_info['environment']['backend']
-            python = env_info['environment']['python']
-            repo_path = env_info['repository']['path']
-            env_registry_file = ENVS_DIR / f"{env_name}.toml"
+    for env in envs:
+        env_name = env["environment"]["name"]
+        env_path = env["environment"]["path"]
+        backend = env["environment"]["backend"]
+        python = env["environment"]["python"]
+        repo_path = env["repository"]["path"]
+        env_registry_file = ENVS_DIR / f"{env_name}.toml"
 
-            if backend == "conda":
-                conda_backend = CondaBackend()
-                activate_cmd = conda_backend.get_activate_cmd(env_name)
-            elif backend == "venv":
-                venv_backend = VenvBackend()
-                activate_cmd = venv_backend.get_activate_cmd(env_name, Path(repo_path))
-            else:
-                activate_cmd = f"# Activate command for {backend} not available"
+        if backend == "conda":
+            conda_backend = CondaBackend()
+            activate_cmd = conda_backend.get_activate_cmd(env_name)
+        elif backend == "venv":
+            venv_backend = VenvBackend()
+            activate_cmd = venv_backend.get_activate_cmd(Path(env_path))
+        else:
+            activate_cmd = f"# Activate command for {backend} not available"
 
-            typer.secho(f"\n  • {env_name}", fg=typer.colors.CYAN, bold=True)
-            typer.echo(f"    Backend:    {backend}")
-            typer.echo(f"    Python:     {python}")
-            typer.echo(f"    Location:   {repo_path}")
-            typer.echo(f"    Registry:   {env_registry_file}")
-            typer.secho(f"    Command:    ", nl=False, dim=True)
-            typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
+        typer.secho(f"\n  • {env_name}", fg=typer.colors.CYAN, bold=True)
+        typer.echo(f"    Backend:      {backend}")
+        typer.echo(f"    Path:         {env_path}")
+        typer.echo(f"    Python:       {python}")
+        typer.echo(f"    Repository:   {repo_path}")
+        typer.echo(f"    Registry:     {env_registry_file}")
+        typer.secho(f"    Command:    ", nl=False, dim=True)
+        typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
 
 
 def delete(
@@ -66,10 +69,15 @@ def delete(
         conda_backend = CondaBackend()
         conda_backend.delete_environment(venv_name, verbose)
     elif backend == "venv":
+        # Get venv_dir from registry path
+        if env_path := env_info.get("environment", {}).get("path"):
+            venv_dir = Path(env_path).name
+        else:
+            venv_dir = DEFAULT_VENV_NAME
         venv_backend = VenvBackend()
-        venv_backend.delete_environment(venv_name, Path(env_info["repository"]["path"]), verbose)
+        repo_path = Path(env_info["repository"]["path"])
+        venv_backend.delete_environment(venv_dir, repo_path, verbose)
     typer.echo("✅")
-
     typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
     if env_registry.delete_environment_registry(venv_name):
         typer.echo("✅")
@@ -94,7 +102,7 @@ def prune(
 
     typer.echo(f"found {len(orphaned_envs)} orphaned environment(s):\n")
     for env_info in orphaned_envs:
-        typer.echo(f"  • {env_info['environment']['name']} ({env_info['environment']['backend']}) -> {env_info['repository']['path']}")
+        typer.echo(f'  • {env_info["environment"]["name"]} ({env_info["environment"]["backend"]}) -> {env_info["repository"]["path"]}')
 
     if dry_run:
         typer.echo("\n[DRY RUN] No changes made. Run without --dry-run to actually prune.")

@@ -11,7 +11,7 @@ import toml
 import typer
 
 from gvit.utils.globals import ENVS_DIR
-from gvit.utils.schemas import EnvRegistryFile, EnvRegistryDeps
+from gvit.utils.schemas import RegistryFile, RegistryDeps
 
 
 class EnvRegistry:
@@ -39,7 +39,7 @@ class EnvRegistry:
         env_file = ENVS_DIR / f"{venv_name}.toml"
         repo_abs_path = Path(repo_path).resolve()
 
-        env_info: EnvRegistryFile = {
+        env_info: RegistryFile = {
             "environment": {
                 "name": venv_name,
                 "backend": backend,
@@ -66,7 +66,7 @@ class EnvRegistry:
                     "installed_at": datetime.now().isoformat(),
                 }
 
-            env_info["deps"] = cast(EnvRegistryDeps, deps_dict)
+            env_info["deps"] = cast(RegistryDeps, deps_dict)
 
         with open(env_file, "w") as f:
             toml.dump(env_info, f)
@@ -107,15 +107,15 @@ class EnvRegistry:
 
         return modified_deps_groups
 
-    def get_environments(self) -> list[EnvRegistryFile]:
+    def get_environments(self) -> list[RegistryFile]:
         """Method to get all the environments in the registry."""
         envs = [self.load_environment_info(env_name) for env_name in self.list_environments()]
         return [env for env in envs if env]
 
-    def load_environment_info(self, venv_name: str) -> EnvRegistryFile | None:
+    def load_environment_info(self, venv_name: str) -> RegistryFile | None:
         """Load environment information from registry."""
         env_file = ENVS_DIR / f"{venv_name}.toml"
-        return cast(EnvRegistryFile, toml.load(env_file)) if env_file.exists() else None
+        return cast(RegistryFile, toml.load(env_file)) if env_file.exists() else None
 
     def list_environments(self) -> list[str]:
         """List all registered environments."""
@@ -136,7 +136,7 @@ class EnvRegistry:
             return True
         return False
 
-    def get_orphaned_envs(self) -> list[EnvRegistryFile]:
+    def get_orphaned_envs(self) -> list[RegistryFile]:
         """Method to get environments if their repository path no longer exists."""
         return [
             env for env in self.get_environments() if not Path(env['repository']['path']).exists()

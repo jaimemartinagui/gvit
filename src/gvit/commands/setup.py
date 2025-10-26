@@ -65,12 +65,11 @@ def setup(
     repo_config = load_repo_config(str(target_dir))
 
     # 6. Create virtual environment
-    venv_name = venv_name or target_dir.name
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    venv_name = create_venv(venv_name, str(target_dir), backend, python, force, verbose)
+    registry_name, env_path = create_venv(venv_name, str(target_dir), backend, python, force, verbose)
 
     # 7. Install dependencies
     if no_deps:
@@ -79,13 +78,14 @@ def setup(
         typer.echo("\n- Skipping dependency installation...✅")
     else:
         resolved_base_deps, resolved_extra_deps = install_dependencies(
-            venv_name, backend, str(target_dir), base_deps, extra_deps, repo_config, local_config, verbose
+            registry_name, backend, str(target_dir), base_deps, extra_deps, repo_config, local_config, verbose
         )
 
     # 8. Save environment info to registry
     env_registry = EnvRegistry()
     env_registry.save_environment_info(
-        venv_name=venv_name,
+        venv_name=registry_name,
+        venv_path=env_path,
         repo_path=str(target_dir),
         repo_url=repo_url or "",
         backend=backend,
@@ -95,7 +95,7 @@ def setup(
     )
 
     # 9. Summary message
-    show_summary_message(venv_name, backend, str(target_dir))
+    show_summary_message(registry_name)
 
 
 def _get_remote_url(repo_dir: str) -> str:
