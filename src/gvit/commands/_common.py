@@ -8,6 +8,7 @@ import typer
 
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
+from gvit.backends.virtualenv import VirtualenvBackend
 from gvit.utils.schemas import LocalConfig, RepoConfig
 from gvit.utils.utils import get_base_deps, get_extra_deps
 from gvit.utils.globals import DEFAULT_VENV_NAME
@@ -44,6 +45,12 @@ def create_venv(
         venv_name = venv_backend.create_venv(venv_name, repo_path_, python, force, verbose)
         registry_name = venv_backend.generate_unique_venv_registry_name(repo_path_ / venv_name)
         venv_path = venv_backend.get_venv_path(venv_name, repo_path_)
+    elif backend == "virtualenv":
+        venv_name = venv_name or DEFAULT_VENV_NAME
+        virtualenv_backend = VirtualenvBackend()
+        venv_name = virtualenv_backend.create_venv(venv_name, repo_path_, python, force, verbose)
+        registry_name = virtualenv_backend.generate_unique_venv_registry_name(repo_path_ / venv_name)
+        venv_path = virtualenv_backend.get_venv_path(venv_name, repo_path_)
     else:
         raise Exception(f'Backend "{backend}" not supported.')
 
@@ -130,10 +137,13 @@ def show_summary_message(registry_name: str) -> None:
     venv_name = Path(venv_path).name
     if backend == 'conda':
         conda_backend = CondaBackend()
-        activate_cmd = conda_backend.get_activate_cmd(registry_name)
+        activate_cmd = conda_backend.get_activate_cmd(venv_name)
     elif backend == 'venv':
         venv_backend = VenvBackend()
         activate_cmd = venv_backend.get_activate_cmd(venv_path)
+    elif backend == 'virtualenv':
+        virtualenv_backend = VirtualenvBackend()
+        activate_cmd = virtualenv_backend.get_activate_cmd(venv_path)
     else:
         activate_cmd = "# Activation command not available"
 
@@ -172,6 +182,16 @@ def install_dependencies_from_file(
     elif backend == "venv":
         venv_backend = VenvBackend()
         return venv_backend.install_dependencies(
+            venv_name=venv_name,
+            repo_path=repo_path_,
+            deps_group_name=deps_group_name,
+            deps_path=deps_abs_path,
+            extras=extra_deps,
+            verbose=verbose
+        )
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        return virtualenv_backend.install_dependencies(
             venv_name=venv_name,
             repo_path=repo_path_,
             deps_group_name=deps_group_name,

@@ -64,7 +64,7 @@ gvit setup
 * 🌳 **Visual command tree** to explore available commands
 * ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
-* 🐍 **Multiple backends**: `venv` (built-in) and `conda` support
+* 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support
 
 ---
 
@@ -96,8 +96,12 @@ Or specify options directly:
 
 ```bash
 gvit config setup --backend venv --python 3.11 --base-deps requirements.txt
+
 # or use conda
 gvit config setup --backend conda --python 3.11
+
+# or use virtualenv (faster, more features)
+gvit config setup --backend virtualenv --python 3.11
 ```
 
 ### Clone a Repository
@@ -262,7 +266,8 @@ gvit tree
 ### Environment Setup Process (common to all commands)
 
 3. **Creates virtual environment** using your preferred backend:
-   - **`venv`**: Python's built-in virtualenv (creates `.venv/` in repo)
+   - **`venv`**: Python's built-in venv module (creates `.venv/` in repo)
+   - **`virtualenv`**: Enhanced virtual environments (creates `.venv/` in repo, faster than venv)
    - **`conda`**: Conda environments (centralized management)
 4. **Resolves dependencies** with priority system:
    - CLI arguments (highest priority)
@@ -292,7 +297,7 @@ Global preferences: `~/.config/gvit/config.toml`
 
 ```toml
 [gvit]
-backend = "venv"  # or "conda"
+backend = "venv"  # or "conda", "virtualenv"
 python = "3.11"
 
 [deps]
@@ -302,6 +307,9 @@ test = "requirements-test.txt"
 
 [backends.venv]
 name = ".venv"  # Directory name for venv (default: .venv)
+
+[backends.virtualenv]
+name = ".venv"  # Directory name for virtualenv (default: .venv)
 
 [backends.conda]
 path = "/path/to/conda"  # Optional: custom conda path
@@ -376,6 +384,7 @@ gvit/
 │   │   └── envs.py         # Environment management commands
 │   ├── backends/
 │   │   ├── venv.py         # Venv backend implementation
+│   │   ├── virtualenv.py   # Virtualenv backend implementation
 │   │   └── conda.py        # Conda backend implementation
 │   ├── utils/
 │   │   ├── exceptions.py   # Custom exceptions
@@ -402,6 +411,7 @@ gvit/
 | **Tree command** | ✅ | Visual command structure explorer |
 | **Venv backend** | ✅ | Python's built-in venv support |
 | **Conda backend** | ✅ | Complete conda integration |
+| **Virtualenv backend** | ✅ | Complete virtualenv integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
 | **Environment registry** | ✅ | Track environments with metadata and dependency hashes |
 | **Environment management** | ✅ | `list`, `show`, `delete`, `prune` commands |
@@ -417,7 +427,6 @@ gvit/
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| **0.1.0** | 📋 Planned | Support for `virtualenv` backend |
 | **0.2.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
 | **0.3.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
 | **0.4.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
@@ -582,7 +591,7 @@ gvit tree
 
 Contributions are welcome! Areas we'd love help with:
 
-- Additional backends (virtualenv, pyenv)
+- Additional backends (pyenv, poetry)
 - `checkout` and other commands
 - Cross-platform testing
 - Documentation improvements

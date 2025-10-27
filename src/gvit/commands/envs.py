@@ -7,9 +7,10 @@ import typer
 from pathlib import Path
 
 from gvit.env_registry import EnvRegistry
-from gvit.utils.globals import ENVS_DIR, DEFAULT_VENV_NAME
+from gvit.utils.globals import ENVS_DIR
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
+from gvit.backends.virtualenv import VirtualenvBackend
 
 
 def list_() -> None:
@@ -35,6 +36,9 @@ def list_() -> None:
         elif backend == "venv":
             venv_backend = VenvBackend()
             activate_cmd = venv_backend.get_activate_cmd(venv_path)
+        elif backend == "virtualenv":
+            virtualenv_backend = VirtualenvBackend()
+            activate_cmd = virtualenv_backend.get_activate_cmd(venv_path)
         else:
             activate_cmd = f"# Activate command for {backend} not available"
 
@@ -71,6 +75,10 @@ def delete(
         repo_path = Path(venv_info["repository"]["path"])
         venv_backend = VenvBackend()
         venv_backend.delete_venv(Path(venv_info["environment"]["path"]).name, repo_path, verbose)
+    elif backend == "virtualenv":
+        repo_path = Path(venv_info["repository"]["path"])
+        virtualenv_backend = VirtualenvBackend()
+        virtualenv_backend.delete_venv(Path(venv_info["environment"]["path"]).name, repo_path, verbose)
 
     typer.echo("✅")
     typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
@@ -125,8 +133,8 @@ def prune(
                     typer.echo("✅")
                 else:
                     typer.secho('⚠️  Environment not found in backend', fg=typer.colors.YELLOW)
-            elif backend == "venv":
-                typer.secho('⚠️  Repository deleted, venv was already removed', fg=typer.colors.YELLOW)
+            elif backend in ["venv", "virtualenv"]:
+                typer.secho('⚠️  Repository deleted, environment was already removed', fg=typer.colors.YELLOW)
         except Exception:
             errors_backend.append(venv_name)
             continue

@@ -21,7 +21,7 @@ DEFAULT_VERBOSE = False
 SUPPORTED_BACKENDS = [
     "venv",
     "conda",
-    # "virtualenv",
+    "virtualenv",
     # "pyenv",
     # "pipenv"
 ]
