@@ -2,15 +2,18 @@
 Module for the "gvit envs" group of commands.
 """
 
-import typer
-
 from pathlib import Path
+
+import toml
+import typer
 
 from gvit.env_registry import EnvRegistry
 from gvit.utils.globals import ENVS_DIR
+from gvit.utils.utils import load_local_config, load_repo_config
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
 from gvit.backends.virtualenv import VirtualenvBackend
+from gvit.commands._common import create_venv, delete_venv, install_dependencies
 
 
 def list_() -> None:
@@ -66,21 +69,14 @@ def delete(
         typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
         return None
 
-    typer.echo(f'- Removing environment "{venv_name}" backend...', nl=False)
-    backend = venv_info["environment"]["backend"]
-    if backend == "conda":
-        conda_backend = CondaBackend()
-        conda_backend.delete_venv(venv_name, verbose)
-    elif backend == "venv":
-        repo_path = Path(venv_info["repository"]["path"])
-        venv_backend = VenvBackend()
-        venv_backend.delete_venv(Path(venv_info["environment"]["path"]).name, repo_path, verbose)
-    elif backend == "virtualenv":
-        repo_path = Path(venv_info["repository"]["path"])
-        virtualenv_backend = VirtualenvBackend()
-        virtualenv_backend.delete_venv(Path(venv_info["environment"]["path"]).name, repo_path, verbose)
+    delete_venv(
+        backend=venv_info["environment"]["backend"],
+        venv_name=venv_name,
+        venv_path=venv_info["environment"]["path"],
+        repo_path=Path(venv_info["repository"]["path"]),
+        verbose=verbose
+    )
 
-    typer.echo("✅")
     typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
     if env_registry.delete_environment_registry(venv_name):
         typer.echo("✅")
@@ -159,6 +155,117 @@ def prune(
         typer.secho(f'\n⚠️  Errors on backend deletion: {errors_backend}', fg=typer.colors.YELLOW)
 
 
+def reset(
+    venv_name: str = typer.Argument(help="Name of the environment to reset."),
+    no_deps: bool = typer.Option(False, "--no-deps", is_flag=True, help="Skip dependency installation."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation."),
+    verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")
+) -> None:
+    """
+    Reset an environment by recreating it and reinstalling dependencies from registry.
+
+    This command:
+
+    1. Deletes the environment backend.
+
+    2. Recreates it with the same Python version.
+
+    3. Reinstalls dependencies tracked in the registry (unless --no-deps).
+
+    4. Preserves the registry entry (unlike delete + setup).
+    """
+    registry_name = venv_name
+    env_registry = EnvRegistry()
+    venv_info = env_registry.load_environment_info(registry_name)
+
+    if venv_info is None:
+        typer.secho(f'⚠️  Environment "{registry_name}" not found in registry.', fg=typer.colors.YELLOW)
+        return None
+
+    backend = venv_info["environment"]["backend"]
+    python = venv_info["environment"]["python"]
+    venv_path = venv_info["environment"]["path"]
+    repo_path = Path(venv_info["repository"]["path"])
+    venv_name = Path(venv_path).name
+
+    if not repo_path.exists():
+        typer.secho(f"⚠️  Repository path not found: {repo_path}", fg=typer.colors.YELLOW)
+        typer.echo("   Run `gvit envs prune` to clean orphaned environments.")
+        return None
+
+    if not yes:
+        typer.echo(f'- This will reset environment "{registry_name}":')
+        typer.echo(f'  Backend:     {backend}')
+        typer.echo(f'  Python:      {python}')
+        typer.echo(f'  Path:        {venv_path}')
+        typer.echo(f'  Repository:  {repo_path}')
+        if not typer.confirm("\n  Continue?", default=False):
+            typer.secho("  Aborted!", fg=typer.colors.RED)
+            return None
+
+    # 1: Delete backend
+    delete_venv(
+        backend=backend, venv_name=venv_name, venv_path=venv_path, repo_path=repo_path, verbose=verbose
+    )
+
+    # 2: Recreate backend
+    _, venv_name, venv_path = create_venv(
+        venv_name=venv_name,
+        repo_path=str(repo_path),
+        backend=backend,
+        python=python,
+        force=True,
+        verbose=verbose
+    )
+
+    # 3: Reinstall dependencies (if requested)
+    if no_deps:
+        typer.echo("\n- Skipping dependency installation...✅")
+        # Clear installed section from registry since nothing was installed
+        if "deps" in venv_info and "installed" in venv_info.get("deps", {}):
+            typer.echo("\n- Clearing dependency tracking from registry...", nl=False)
+            venv_info["deps"].pop("installed", None)
+            with open(ENVS_DIR / f"{registry_name}.toml", "w") as f:
+                toml.dump(venv_info, f)
+            typer.echo("✅")
+        _show_summary_msg_reset(registry_name)
+        return None
+
+    deps = venv_info.get("deps", {})
+    if not deps or ("base" not in deps and len([k for k in deps.keys() if k != "installed"]) == 0):
+        typer.echo("\n- No dependencies tracked in registry...✅")
+        _show_summary_msg_reset(registry_name)
+        return None
+
+    extra_deps = {k: v for k, v in deps.items() if k not in ["base", "installed"]}
+    resolved_base_deps, resolved_extra_deps = install_dependencies(
+        venv_name=venv_name,
+        backend=backend,
+        repo_path=str(repo_path),
+        base_deps=deps.get("base"),
+        extra_deps=",".join(extra_deps),
+        repo_config=load_repo_config(str(repo_path)),
+        local_config=load_local_config(),
+        verbose=verbose,
+    )
+
+    # 4. Save environment info to registry
+    env_registry.save_venv_info(
+        venv_name=registry_name,
+        venv_path=venv_path,
+        repo_path=str(repo_path),
+        repo_url=venv_info["repository"]["url"],
+        backend=backend,
+        python=python,
+        base_deps=resolved_base_deps,
+        extra_deps=resolved_extra_deps,
+        created_at=venv_info["environment"]["created_at"]
+    )
+
+    # 5. Summary message
+    _show_summary_msg_reset(registry_name)
+
+
 def show(venv_name: str = typer.Argument(help="Name of the environment to display.")) -> None:
     """Display the environment registry file for a specific environment."""
     env_registry = EnvRegistry()
@@ -218,3 +325,9 @@ def show(venv_name: str = typer.Argument(help="Name of the environment to displa
 
     except Exception as e:
         typer.secho(f"Error reading environment registry: {e}", fg=typer.colors.RED)
+
+
+def _show_summary_msg_reset(registry_name: str) -> None:
+    """Function to show the summary message of the reset command."""
+    typer.echo(f'\n🎉 Environment "{registry_name}" reset successfully!')
+    typer.echo(f'📖 Registry updated at: ~/.config/gvit/envs/{registry_name}.toml')

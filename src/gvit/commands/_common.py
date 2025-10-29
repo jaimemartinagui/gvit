@@ -58,6 +58,27 @@ def create_venv(
     return registry_name, venv_name, venv_path
 
 
+def delete_venv(
+    backend: str, venv_name: str, venv_path: str, repo_path: Path, verbose: bool = False
+) -> None:
+    """Function to delete a virtual environment."""
+    typer.echo(f'\n- Deleting environment "{venv_name}" backend...', nl=False)
+    try:
+        if backend == "conda":
+            conda_backend = CondaBackend()
+            conda_backend.delete_venv(venv_name, verbose)
+        elif backend == "venv":
+            venv_backend = VenvBackend()
+            venv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
+        elif backend == "virtualenv":
+            virtualenv_backend = VirtualenvBackend()
+            virtualenv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
+        typer.echo("✅")
+    except Exception as e:
+        typer.secho(f"\n❗ Failed to delete environment: {e}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+
 def install_dependencies(
     venv_name: str,
     backend: str,

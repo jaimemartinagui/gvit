@@ -11,7 +11,7 @@ from gvit.commands.clone import clone
 from gvit.commands.init import init
 from gvit.commands.setup import setup as setup_repo
 from gvit.commands.tree import tree
-from gvit.commands.envs import list_, delete, show as show_env, prune
+from gvit.commands.envs import list_, delete, show as show_env, prune, reset
 from gvit.commands.config import setup, add_extra_deps, remove_extra_deps, show
 from gvit.utils.utils import get_version
 from gvit.utils.globals import ASCII_LOGO
@@ -28,6 +28,7 @@ config.command()(show)
 envs = typer.Typer(help="Environments management commands.")
 envs.command(name="list")(list_)
 envs.command(name="delete")(delete)
+envs.command(name="reset")(reset)
 envs.command(name="show")(show_env)
 envs.command(name="prune")(prune)
 

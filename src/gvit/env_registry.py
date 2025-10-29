@@ -32,7 +32,8 @@ class EnvRegistry:
         backend: str,
         python: str,
         base_deps: str | None,
-        extra_deps: dict[str, str]
+        extra_deps: dict[str, str],
+        created_at: str | None = None
     ) -> None:
         """Save environment information to registry."""
         typer.echo("\n- Saving environment info to registry...", nl=False)
@@ -45,7 +46,7 @@ class EnvRegistry:
                 "backend": backend,
                 "path": venv_path,
                 "python": python,
-                "created_at": datetime.now().isoformat(),
+                "created_at": created_at or datetime.now().isoformat(),
             },
             "repository": {
                 "path": str(repo_abs_path),
