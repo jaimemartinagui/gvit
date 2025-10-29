@@ -218,6 +218,12 @@ gvit envs show my-env
 # Remove an environment (registry and backend)
 gvit envs delete my-env
 
+# Reset an environment (recreate and reinstall dependencies)
+gvit envs reset my-env
+
+# Reset without reinstalling dependencies
+gvit envs reset my-env --no-deps
+
 # Clean up orphaned environments (repos that no longer exist)
 gvit envs prune
 
@@ -262,6 +268,13 @@ gvit tree
 3. **Compares dependency file hashes** (stored in registry vs. current files)
 4. **Reinstalls only changed dependencies** automatically
 5. **Updates registry** with new hashes
+
+**`gvit envs reset`**: Resets an environment to clean state
+1. **Deletes the environment backend** (venv folder or conda env)
+2. **Recreates it empty** with the same Python version
+3. **Reinstalls dependencies** from registry (unless `--no-deps`)
+4. **Updates registry** with new hashes and timestamp
+5. **Preserves registry entry** (unlike `delete` + `setup`)
 
 ### Environment Setup Process (common to all commands)
 
@@ -550,14 +563,54 @@ gvit envs list
 # Check environment details (shows registry file with syntax highlighting)
 gvit envs show my-project
 
-# Remove specific environment (registry + conda env)
+# Remove specific environment (registry + backend)
 gvit envs delete old-project
+
+# Reset an environment (recreate + reinstall dependencies from registry)
+gvit envs reset my-project
+
+# Reset without dependencies (useful for testing clean environments)
+gvit envs reset my-project --no-deps
 
 # Clean up all orphaned environments
 gvit envs prune
 
 # See what would be cleaned without actually removing
 gvit envs prune --dry-run
+```
+
+### Fixing a Broken Environment
+
+```bash
+# Your environment is corrupted or has dependency conflicts
+cd my-project
+
+# Reset the environment (recreates it from scratch)
+gvit envs reset my-project-abc123
+
+# Output:
+# ⚠️  This will reset environment "my-project-abc123":
+#    Backend:     venv
+#    Python:      3.11
+#    Path:        /path/to/my-project/.venv
+#    Repository:  /path/to/my-project
+#
+#   Continue? [y/N]: y
+#
+# - Deleting environment backend...✅
+# - Recreating environment with Python 3.11 (this might take some time)...✅
+#
+# - Reinstalling dependencies from registry...
+#   Group "base"...✅
+#   Group "dev"...✅
+#
+# - Updating registry with new dependency hashes...✅
+#
+# 🎉 Environment "my-project-abc123" reset successfully!
+#    Registry updated at: ~/.config/gvit/envs/my-project-abc123.toml
+
+# Environment is now clean and ready to use
+source .venv/bin/activate
 ```
 
 ### Explore Available Commands
@@ -578,6 +631,7 @@ gvit tree
 # │   ├── delete
 # │   ├── list
 # │   ├── prune
+# │   ├── reset
 # │   └── show
 # ├── pull
 # ├── init
