@@ -94,8 +94,8 @@ def pull(
     typer.echo(f"\n- Dependency groups to re-install: {list(to_reinstall)}.")
     from_pyproject = {k: v for k, v in to_reinstall.items() if "pyproject.toml" in v}
     if from_pyproject:
-        extras = [dep_name for dep_name in from_pyproject if dep_name != "base"]
-        deps_group_name = f"base (extras: {','.join(extras)})" if extras else "base"
+        extras = [dep_name for dep_name in from_pyproject if dep_name != "_base"]
+        deps_group_name = f"_base (extras: {','.join(extras)})" if extras else "_base"
         dep_path = from_pyproject[list(from_pyproject)[0]]
         install_dependencies_from_file(
             venv_name=venv_name,
@@ -126,8 +126,8 @@ def pull(
         repo_url=env['repository']['url'],
         backend=env['environment']['backend'],
         python=env['environment']['python'],
-        base_deps=current_deps.get("base"),
-        extra_deps={k: v for k, v in current_deps.items() if k != "base"}
+        base_deps=current_deps.get("_base"),
+        extra_deps={k: v for k, v in current_deps.items() if k != "_base"}
     )
 
     typer.echo("\n🎉 Repository and environment updated successfully!")
@@ -158,9 +158,9 @@ def _get_current_deps(
     Function to get the current value for the base deps and extra_deps.
     Priority: CLI > repo_config > env
     """
-    current_base_deps = base_deps or repo_config.get("deps", {}).get("base") or env.get("deps", {}).get("base")
+    current_base_deps = base_deps or repo_config.get("deps", {}).get("_base") or env.get("deps", {}).get("_base")
     repo_extra_deps = get_extra_deps(repo_config)
-    env_extra_deps = {k: v for k, v in env.get("deps", {}).items() if k not in ["base", "installed"]}
+    env_extra_deps = {k: v for k, v in env.get("deps", {}).items() if k not in ["_base", "installed"]}
     extra_deps_ = {}
     if extra_deps:
         for extra_dep in extra_deps.split(","):
@@ -177,4 +177,4 @@ def _get_current_deps(
                         fg=typer.colors.YELLOW
                     )
     current_extra_deps = extra_deps_ or repo_extra_deps or env_extra_deps
-    return {"base": current_base_deps, **current_extra_deps} if current_base_deps else current_extra_deps
+    return {"_base": current_base_deps, **current_extra_deps} if current_base_deps else current_extra_deps

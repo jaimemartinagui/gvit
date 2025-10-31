@@ -81,13 +81,13 @@ def get_python(config: LocalConfig | RepoConfig) -> str:
 
 def get_base_deps(config: LocalConfig | RepoConfig) -> str:
     """Function to get the base deps from the config."""
-    return config.get("deps", {}).get("base", DEFAULT_BASE_DEPS)
+    return config.get("deps", {}).get("_base", DEFAULT_BASE_DEPS)
 
 
 def get_extra_deps(config: LocalConfig | RepoConfig) -> dict:
     """Function to get the extra deps from the config."""
     deps = config.get("deps")
-    return {k: v for k, v in deps.items() if k != "base"} if deps else {}
+    return {k: v for k, v in deps.items() if k != "_base"} if deps else {}
 
 
 def get_verbose(config: LocalConfig) -> bool:

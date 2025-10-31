@@ -129,13 +129,13 @@ def remove_extra_deps(
 
     if key not in config_data["deps"]:
         typer.secho(f'Dependency group "{key}" not found.', fg=typer.colors.YELLOW)
-        available_keys = [k for k in config_data["deps"].keys() if k != "base"]
+        available_keys = [k for k in config_data["deps"].keys() if k != "_base"]
         if available_keys:
             typer.echo(f"\nAvailable dependency groups: {available_keys}.")
         return None
 
-    if key == "base":
-        typer.secho("Cannot remove 'base' - reserved dependency setting.", fg=typer.colors.RED)
+    if key == "_base":
+        typer.secho("Cannot remove '_base' - reserved dependency setting.", fg=typer.colors.RED)
         return None
 
     removed_value = config_data["deps"].pop(key)
@@ -214,9 +214,9 @@ def _get_updated_local_config(
             "python": python,
         },
         "deps": {
-            "base": base_deps,
+            "_base": base_deps,
             # Preserve existing extra deps (dev, test, etc.)
-            **{k: v for k, v in existing_config.get("deps", {}).items() if k != "base"}
+            **{k: v for k, v in existing_config.get("deps", {}).items() if k != "_base"}
         }
     }
     if conda_path or venv_name:

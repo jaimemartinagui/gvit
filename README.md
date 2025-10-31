@@ -45,6 +45,21 @@ gvit setup
 
 🎉 Environment created and dependencies installed!
 
+### When to use gvit vs other tools
+
+**Use `gvit` if you:**
+- Work on multiple projects simultaneously.
+- Want Git workflows to automatically sync environments.
+- Need centralized environment tracking.
+- Want flexibility in backends (e.g. `conda` is crucial for certain DS/ML projects).
+- Work with legacy projects that still do not use `pyproject.toml`.
+
+**Use `uv` if you:**
+- Primarily work on one project at a time.
+- Want the fastest package installation.
+- Focus on modern Python packaging (`pyproject.toml`).
+- Need advanced dependency resolution.
+
 ### Examples
 
 ![gvit clone example](assets/img/clone.png)
@@ -290,7 +305,7 @@ gvit tree
 5. **Installs dependencies** from:
    - `pyproject.toml` (with optional extras support)
    - `requirements.txt` or custom paths
-   - Multiple dependency groups (base, dev, test, etc.)
+   - Multiple dependency groups (_base, dev, test, etc.)
 6. **Tracks environment in registry**:
    - Saves environment metadata to `~/.config/gvit/envs/{env_name}.toml`
    - Records dependency file hashes for change detection
@@ -314,7 +329,7 @@ backend = "venv"  # or "conda", "virtualenv"
 python = "3.11"
 
 [deps]
-base = "requirements.txt"
+_base = "requirements.txt"
 dev = "requirements-dev.txt"
 test = "requirements-test.txt"
 
@@ -344,11 +359,11 @@ path = "/Users/user/projects/my-project"
 url = "https://github.com/user/my-project.git"
 
 [deps]
-base = "requirements.txt"
+_base = "requirements.txt"
 dev = "requirements-dev.txt"
 
 [deps.installed]
-base_hash = "a1b2c3d4e5f6g7h8"  # SHA256 hash for change detection
+_base_hash = "a1b2c3d4e5f6g7h8"  # SHA256 hash for change detection
 dev_hash = "i9j0k1l2m3n4o5p6"
 installed_at = "2025-01-22T20:53:15.789012"
 ```
@@ -362,7 +377,7 @@ Per-project settings: `.gvit.toml` (in repository root)
 python = "3.12"  # Override Python version for this project
 
 [deps]
-base = "requirements.txt"
+_base = "requirements.txt"
 dev = "requirements-dev.txt"
 internal = "requirements-internal.txt"
 ```
@@ -374,7 +389,7 @@ Or use `pyproject.toml` (tool section):
 python = "3.12"
 
 [tool.gvit.deps]
-base = "pyproject.toml"
+_base = "pyproject.toml"
 ```
 
 ---
@@ -601,7 +616,7 @@ gvit envs reset my-project-abc123
 # - Recreating environment with Python 3.11 (this might take some time)...✅
 #
 # - Reinstalling dependencies from registry...
-#   Group "base"...✅
+#   Group "_base"...✅
 #   Group "dev"...✅
 #
 # - Updating registry with new dependency hashes...✅

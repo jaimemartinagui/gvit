@@ -56,7 +56,7 @@ class EnvRegistry:
 
         if base_deps or extra_deps:
             deps_dict: dict[str, Any] = {
-                **({"base": base_deps} if base_deps else {}),
+                **({"_base": base_deps} if base_deps else {}),
                 **extra_deps,
             }
 
@@ -99,7 +99,7 @@ class EnvRegistry:
             if not base_file.exists():
                 continue
             current_hash = (
-                self._hash_pyproject_deps(base_file, None if dep_name == "base" else dep_name)
+                self._hash_pyproject_deps(base_file, None if dep_name == "_base" else dep_name)
                 if base_file.name == "pyproject.toml"
                 else self._hash_file(base_file)
             )
@@ -157,7 +157,7 @@ class EnvRegistry:
             if base_file.exists():
                 hash_ = self._hash_pyproject_deps(base_file) if base_file.name == "pyproject.toml" else self._hash_file(base_file)
                 if hash_:
-                    deps_hashes["base_hash"] = hash_
+                    deps_hashes["_base_hash"] = hash_
         for name, path in extra_deps.items():
             dep_file = repo_abs_path / path
             if dep_file.exists():

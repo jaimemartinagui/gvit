@@ -22,7 +22,7 @@ class GvitLocalConfig(TypedDict):
 
 
 class DepsLocalConfig(TypedDict):
-    base: NotRequired[str]
+    _base: NotRequired[str]
     # Additional dependency groups can be any string key
 
 
@@ -47,7 +47,7 @@ class GvitRepoConfig(TypedDict):
 
 
 class DepsRepoConfig(TypedDict):
-    base: NotRequired[str]
+    _base: NotRequired[str]
     # Additional dependency groups can be any string key
 
 
@@ -75,13 +75,13 @@ class RegistryRepository(TypedDict):
 
 
 class RegistryDepsInstalled(TypedDict):
-    base_hash: NotRequired[str]  # SHA256 hash (first 16 chars)
+    _base_hash: NotRequired[str]  # SHA256 hash (first 16 chars)
     installed_at: str  # ISO format datetime string
     # Additional hashes for extra deps: {dep_name}_hash
 
 
 class RegistryDeps(TypedDict):
-    base: NotRequired[str]  # Path to base dependencies file
+    _base: NotRequired[str]  # Path to base dependencies file
     installed: NotRequired[RegistryDepsInstalled]
     # Additional dependency groups can be any string key
 

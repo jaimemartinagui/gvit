@@ -232,17 +232,17 @@ def reset(
         return None
 
     deps = venv_info.get("deps", {})
-    if not deps or ("base" not in deps and len([k for k in deps.keys() if k != "installed"]) == 0):
+    if not deps or ("_base" not in deps and len([k for k in deps.keys() if k != "installed"]) == 0):
         typer.echo("\n- No dependencies tracked in registry...✅")
         _show_summary_msg_reset(registry_name)
         return None
 
-    extra_deps = {k: v for k, v in deps.items() if k not in ["base", "installed"]}
+    extra_deps = {k: v for k, v in deps.items() if k not in ["_base", "installed"]}
     resolved_base_deps, resolved_extra_deps = install_dependencies(
         venv_name=venv_name,
         backend=backend,
         repo_path=str(repo_path),
-        base_deps=deps.get("base"),
+        base_deps=deps.get("_base"),
         extra_deps=",".join(extra_deps),
         repo_config=load_repo_config(str(repo_path)),
         local_config=load_local_config(),

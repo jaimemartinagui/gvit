@@ -102,7 +102,7 @@ def install_dependencies(
         typer.echo("\n- Installing project and dependencies", nl=False)
         typer.secho(" (this might take some time)", nl=False, fg=typer.colors.BLUE)
         typer.echo("...")
-        deps_group_name = f"base (extras: {extra_deps})" if extra_deps else "base"
+        deps_group_name = f"_base (extras: {extra_deps})" if extra_deps else "_base"
         success = install_dependencies_from_file(
             venv_name=venv_name,
             backend=backend,
@@ -118,7 +118,7 @@ def install_dependencies(
         )
 
     resolved_extras = _resolve_extra_deps(extra_deps, repo_config, local_config)
-    deps_to_install = {**{"base": resolved_base}, **resolved_extras}
+    deps_to_install = {**{"_base": resolved_base}, **resolved_extras}
     typer.echo(f"  Dependencies to install: {deps_to_install}")
     typer.echo("\n- Installing dependencies", nl=False)
     typer.secho(" (this might take some time)", nl=False, fg=typer.colors.BLUE)
@@ -127,7 +127,7 @@ def install_dependencies(
         venv_name=venv_name,
         backend=backend,
         repo_path=repo_path,
-        deps_group_name="base",
+        deps_group_name="_base",
         deps_path=resolved_base,
         verbose=verbose
     )
@@ -226,7 +226,7 @@ def install_dependencies_from_file(
 
 def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
     """Resolve base dependencies."""
-    return base_deps or repo_config.get("deps", {}).get("base") or get_base_deps(local_config)
+    return base_deps or repo_config.get("deps", {}).get("_base") or get_base_deps(local_config)
 
 
 def _resolve_extra_deps(
