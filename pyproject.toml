@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.1",
+    "pytest>=7.0.0",
 ]
 test = [
     "pytest>=7.0.0",
