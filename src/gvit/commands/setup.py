@@ -2,7 +2,6 @@
 Module for the "gvit setup" command.
 """
 
-import subprocess
 from pathlib import Path
 
 import typer
@@ -14,14 +13,15 @@ from gvit.utils.utils import (
     get_python,
     get_verbose,
 )
-from gvit.utils.validators import validate_backend, validate_python
+from gvit.utils.validators import validate_backend, validate_python, validate_directory, validate_git_repo
 from gvit.env_registry import EnvRegistry
 from gvit.utils.globals import SUPPORTED_BACKENDS
-from gvit.commands._common import create_venv, install_dependencies, show_summary_message
+from gvit.backends.common import create_venv, install_dependencies, show_summary_message
+from gvit.git import Git
 
 
 def setup(
-    directory: str = typer.Argument(".", help="Directory of the existing repository (defaults to current directory)."),
+    target_dir: str = typer.Option(".", "--target-dir", "-t", help="Directory of the repository (defaults to current directory)."),
     venv_name: str = typer.Option(None, "--venv-name", "-n", help="Name of the virtual environment. If not provided, uses directory name."),
     backend: str = typer.Option(None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Python version for the virtual environment."),
@@ -40,31 +40,26 @@ def setup(
     This is useful when you've cloned a repository manually or want to recreate
     the environment for an existing project.
     """
-    # 1. Resolve directory
-    target_dir = Path(directory).resolve()
-    if not target_dir.exists():
-        typer.secho(f'Directory "{directory}" does not exist.', fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    # 1. Resolve and validate directory
+    target_dir_ = Path(target_dir).resolve()
+    validate_directory(target_dir_)
 
     # 2. Check if it is a git repository
-    if not (target_dir / ".git").exists():
-        typer.secho(f"Directory '{directory}' is not a git repository.", fg=typer.colors.RED)
-        typer.echo("Run `gvit init` instead.")
-        raise typer.Exit(code=1)
+    validate_git_repo(target_dir_)
 
     # 3. Load config
     local_config = load_local_config()
     verbose = verbose or get_verbose(local_config)
 
     # 4. Load repo config
-    repo_config = load_repo_config(str(target_dir))
+    repo_config = load_repo_config(str(target_dir_))
 
     # 5. Create virtual environment
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     validate_backend(backend)
     validate_python(python)
-    registry_name, venv_name, venv_path = create_venv(venv_name, str(target_dir), backend, python, force, verbose)
+    registry_name, venv_name, venv_path = create_venv(venv_name, str(target_dir_), backend, python, force, verbose)
 
     # 6. Install dependencies
     if no_deps:
@@ -75,7 +70,7 @@ def setup(
         resolved_base_deps, resolved_extra_deps = install_dependencies(
             venv_name=venv_name,
             backend=backend,
-            repo_path=str(target_dir),
+            repo_path=str(target_dir_),
             base_deps=base_deps,
             extra_deps=extra_deps,
             repo_config=repo_config,
@@ -84,12 +79,14 @@ def setup(
         )
 
     # 7. Save environment info to registry
+    git = Git()
     env_registry = EnvRegistry()
     env_registry.save_venv_info(
-        venv_name=registry_name,
+        registry_name=registry_name,
+        venv_name=venv_name,
         venv_path=venv_path,
-        repo_path=str(target_dir),
-        repo_url=_get_remote_url(str(target_dir)),
+        repo_path=str(target_dir_),
+        repo_url=git.get_remote_url(str(target_dir_)),
         backend=backend,
         python=python,
         base_deps=resolved_base_deps,
@@ -97,19 +94,6 @@ def setup(
     )
 
     # 8. Summary message
-    show_summary_message(registry_name)
-
-
-def _get_remote_url(repo_dir: str) -> str:
-    """Get the remote URL of the repository if it exists."""
-    try:
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            cwd=repo_dir,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError:
-        return ""
+    show_summary_message(
+        registry_name=registry_name, repo_path=target_dir_, venv_path=Path(venv_path), backend=backend
+    )

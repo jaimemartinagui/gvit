@@ -75,7 +75,8 @@ class RegistryRepository(TypedDict):
 
 
 class RegistryDepsInstalled(TypedDict):
-    _base_hash: NotRequired[str]  # SHA256 hash (first 16 chars)
+    _base_hash: str | None  # SHA256 hash (first 16 chars)
+    _freeze_hash: str | None  # SHA256 hash (first 16 chars) of pip freeze output
     installed_at: str  # ISO format datetime string
     # Additional hashes for extra deps: {dep_name}_hash
 

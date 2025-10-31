@@ -13,7 +13,7 @@ from gvit.utils.utils import load_local_config, load_repo_config
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
 from gvit.backends.virtualenv import VirtualenvBackend
-from gvit.commands._common import create_venv, delete_venv, install_dependencies
+from gvit.backends.common import create_venv, delete_venv, install_dependencies
 
 
 def list_() -> None:
@@ -251,7 +251,8 @@ def reset(
 
     # 4. Save environment info to registry
     env_registry.save_venv_info(
-        venv_name=registry_name,
+        registry_name=registry_name,
+        venv_name=venv_name,
         venv_path=venv_path,
         repo_path=str(repo_path),
         repo_url=venv_info["repository"]["url"],

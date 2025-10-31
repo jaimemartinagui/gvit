@@ -2,9 +2,11 @@
 Module with the conda backend class.
 """
 
+import re
 from pathlib import Path
 import shutil
 import platform
+import hashlib
 import os
 import subprocess
 import json
@@ -168,6 +170,22 @@ class CondaBackend:
             return ""
         except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
             return ""
+
+    def get_freeze_hash(self, venv_name: str, repo_url: str) -> str | None:
+        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+        try:
+            result = subprocess.run(
+                [self.path, "run", "-n", venv_name, "pip", "freeze"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if not result.stdout:
+                return None
+            freeze = re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
+            return hashlib.sha256(freeze.encode()).hexdigest()[:16]
+        except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
+            return None
 
     def _get_path(self) -> str | None:
         """Try to find the conda executable in PATH or common install locations."""

@@ -10,6 +10,7 @@ from typing import cast, Any
 import toml
 import typer
 
+from gvit.backends.common import get_freeze_hash
 from gvit.utils.globals import ENVS_DIR
 from gvit.utils.schemas import RegistryFile, RegistryDeps
 
@@ -25,6 +26,7 @@ class EnvRegistry:
 
     def save_venv_info(
         self,
+        registry_name: str,
         venv_name: str,
         venv_path: str,
         repo_path: str,
@@ -37,12 +39,12 @@ class EnvRegistry:
     ) -> None:
         """Save environment information to registry."""
         typer.echo("\n- Saving environment info to registry...", nl=False)
-        env_file = ENVS_DIR / f"{venv_name}.toml"
+        env_file = ENVS_DIR / f"{registry_name}.toml"
         repo_abs_path = Path(repo_path).resolve()
 
         venv_info: RegistryFile = {
             "environment": {
-                "name": venv_name,
+                "name": registry_name,
                 "backend": backend,
                 "path": venv_path,
                 "python": python,
@@ -59,14 +61,12 @@ class EnvRegistry:
                 **({"_base": base_deps} if base_deps else {}),
                 **extra_deps,
             }
-
-            # Add installed info if we have hashes
-            if deps_hashes := self._get_deps_hashes(base_deps, extra_deps, repo_abs_path):
-                deps_dict["installed"] = {
-                    **deps_hashes,
-                    "installed_at": datetime.now().isoformat(),
-                }
-
+            # Add installed info
+            deps_dict["installed"] = {
+                **self._get_deps_hashes(base_deps, extra_deps, repo_abs_path),
+                "_freeze_hash": get_freeze_hash(venv_name, Path(repo_path), repo_url, backend),
+                "installed_at": datetime.now().isoformat(),
+            }
             venv_info["deps"] = cast(RegistryDeps, deps_dict)
 
         with open(env_file, "w") as f:

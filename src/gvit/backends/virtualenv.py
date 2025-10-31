@@ -2,6 +2,7 @@
 Module with the virtualenv backend class.
 """
 
+import re
 from pathlib import Path
 import subprocess
 import platform
@@ -146,6 +147,24 @@ class VirtualenvBackend:
     def get_venv_path(self, venv_name: str, repo_path: Path) -> str:
         """Get the absolute path to the virtualenv directory."""
         return str((repo_path / venv_name).resolve())
+
+    def get_freeze_hash(self, venv_name: str, repo_path: Path, repo_url: str) -> str | None:
+        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+        try:
+            venv_path = self.get_venv_path(venv_name, repo_path)
+            pip_path = self._get_pip_executable_path(Path(venv_path))
+            result = subprocess.run(
+                [pip_path, "freeze"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if not result.stdout:
+                return None
+            freeze = re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
+            return hashlib.sha256(freeze.encode()).hexdigest()[:16]
+        except (subprocess.CalledProcessError, FileNotFoundError, Exception):
+            return None
 
     def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using virtualenv."""

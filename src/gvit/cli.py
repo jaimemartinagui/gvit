@@ -8,6 +8,7 @@ import typer
 
 from gvit.commands.pull import pull
 from gvit.commands.clone import clone
+from gvit.commands.commit import commit
 from gvit.commands.init import init
 from gvit.commands.setup import setup as setup_repo
 from gvit.commands.tree import tree
@@ -35,6 +36,7 @@ envs.command(name="prune")(prune)
 app.add_typer(config, name="config")
 app.add_typer(envs, name="envs")
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(clone)
+app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(commit)
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(init)
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(pull)
 app.command(name="setup")(setup_repo)

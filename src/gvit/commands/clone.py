@@ -2,7 +2,7 @@
 Module for the "gvit clone" command.
 """
 
-import subprocess
+from pathlib import Path
 
 import typer
 
@@ -17,7 +17,8 @@ from gvit.utils.utils import (
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.env_registry import EnvRegistry
 from gvit.utils.globals import SUPPORTED_BACKENDS
-from gvit.commands._common import create_venv, install_dependencies, show_summary_message
+from gvit.backends.common import create_venv, install_dependencies, show_summary_message
+from gvit.git import Git
 
 
 def clone(
@@ -48,7 +49,8 @@ def clone(
 
     # 2. Clone repo
     target_dir = target_dir or extract_repo_name_from_url(repo_url)
-    _clone_repo(repo_url, target_dir, verbose, ctx.args)
+    git = Git()
+    git.clone(repo_url, target_dir, ctx.args, verbose)
 
     # 3. Load repo config
     repo_config = load_repo_config(target_dir)
@@ -80,7 +82,8 @@ def clone(
     # 6. Save environment info to registry
     env_registry = EnvRegistry()
     env_registry.save_venv_info(
-        venv_name=registry_name,
+        registry_name=registry_name,
+        venv_name=venv_name,
         venv_path=venv_path,
         repo_path=target_dir,
         repo_url=repo_url,
@@ -91,22 +94,6 @@ def clone(
     )
 
     # 7. Summary message
-    show_summary_message(registry_name)
-
-
-def _clone_repo(repo_url: str, target_dir: str, verbose: bool, extra_args: list[str] | None = None) -> None:
-    """Function to clone the repository."""
-    typer.echo(f"- Cloning repository {repo_url}...", nl=False)
-    try:
-        result = subprocess.run(
-            ["git", "clone", repo_url, target_dir] + (extra_args or []),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        if verbose and result.stdout:
-            typer.echo(result.stdout)
-        typer.echo("✅")
-    except subprocess.CalledProcessError as e:
-        typer.secho(f"❗ Git clone failed:\n{e.stderr}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    show_summary_message(
+        registry_name=registry_name, repo_path=Path(target_dir), venv_path=Path(venv_path), backend=backend
+    )

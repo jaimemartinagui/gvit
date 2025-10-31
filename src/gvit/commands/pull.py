@@ -2,21 +2,21 @@
 Module for the "gvit pull" command.
 """
 
-import subprocess
 from pathlib import Path
 
 import typer
 
 from gvit.env_registry import EnvRegistry
 from gvit.utils.utils import load_local_config, load_repo_config, get_verbose, get_extra_deps
-from gvit.commands._common import install_dependencies_from_file
+from gvit.backends.common import install_dependencies_from_file
 from gvit.utils.schemas import RegistryFile, RepoConfig
-from gvit.utils.validators import validate_directory
+from gvit.utils.validators import validate_directory, validate_git_repo
+from gvit.git import Git
 
 
 def pull(
     ctx: typer.Context,
-    directory: str = typer.Argument(".", help="Directory of the repository (defaults to current directory)."),
+    target_dir: str = typer.Option(".", "--target-dir", "-t", help="Directory of the repository (defaults to current directory)."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Path to base dependencies file (overrides repo/local config)."),
     extra_deps: str = typer.Option(None, "--extra-deps", help="Extra dependency groups (e.g. 'dev,test' or 'dev:path.txt,test:path2.txt')."),
     no_deps: bool = typer.Option(False, "--no-deps", help="Skip dependency reinstallation even if changes detected."),
@@ -31,14 +31,12 @@ def pull(
 
     Any extra options will be passed directly to `git pull`.
     """
-    # 1. Resolve directory
-    target_dir = Path(directory).resolve()
-    validate_directory(target_dir)
+    # 1. Resolve and validate directory
+    target_dir_ = Path(target_dir).resolve()
+    validate_directory(target_dir_)
 
     # 2. Check if it is a git repository
-    if not (target_dir / ".git").exists():
-        typer.secho(f"Directory '{directory}' is not a Git repository.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    validate_git_repo(target_dir_)
 
     # 3. Load local config
     local_config = load_local_config()
@@ -47,7 +45,7 @@ def pull(
     # 4. Get environment from registry (search by repo path)
     typer.echo("- Searching for the environment in the registry...", nl=False)
     env_registry = EnvRegistry()
-    envs = [env for env in env_registry.get_environments() if Path(env['repository']['path']) == target_dir]
+    envs = [env for env in env_registry.get_environments() if Path(env['repository']['path']) == target_dir_]
     if envs:
         env = envs[0]
         registry_name = env["environment"]["name"]
@@ -62,7 +60,8 @@ def pull(
 
     # 5. Run git pull
     typer.echo("\n- Running git pull...", nl=False)
-    _pull_repo(str(target_dir), verbose, ctx.args)
+    git = Git()
+    git.pull(str(target_dir_), ctx.args, verbose)
 
     # 6. Skip dependency check if --no-deps
     if no_deps:
@@ -72,7 +71,7 @@ def pull(
         return None
 
     # 7. Get the current path (after pull) for the base and extra deps
-    repo_config = load_repo_config(str(target_dir))
+    repo_config = load_repo_config(str(target_dir_))
     current_deps = _get_current_deps(base_deps, extra_deps, repo_config, env)
 
     # 8. Get dep groups to reinstall
@@ -100,7 +99,7 @@ def pull(
         install_dependencies_from_file(
             venv_name=venv_name,
             backend=env['environment']['backend'],
-            repo_path=str(target_dir),
+            repo_path=str(target_dir_),
             deps_group_name=deps_group_name,
             deps_path=dep_path,
             extra_deps=extras,
@@ -112,7 +111,7 @@ def pull(
         install_dependencies_from_file(
             venv_name=venv_name,
             backend=env['environment']['backend'],
-            repo_path=str(target_dir),
+            repo_path=str(target_dir_),
             deps_group_name=dep_name,
             deps_path=dep_path,
             verbose=verbose
@@ -120,9 +119,10 @@ def pull(
 
     # 10. Update registry with new hashes
     env_registry.save_venv_info(
-        venv_name=registry_name,
+        registry_name=registry_name,
+        venv_name=venv_name,
         venv_path=env['environment']['path'],
-        repo_path=str(target_dir),
+        repo_path=str(target_dir_),
         repo_url=env['repository']['url'],
         backend=env['environment']['backend'],
         python=env['environment']['python'],
@@ -131,24 +131,6 @@ def pull(
     )
 
     typer.echo("\n🎉 Repository and environment updated successfully!")
-
-
-def _pull_repo(repo_dir: str, verbose: bool = False, extra_args: list[str] | None = None) -> None:
-    """Run git pull command."""
-    try:
-        result = subprocess.run(
-            ["git", "pull"] + (extra_args or []),
-            cwd=repo_dir,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        if verbose and result.stdout:
-            typer.echo(result.stdout)
-        typer.echo("✅")
-    except subprocess.CalledProcessError as e:
-        typer.secho(f"❗ Git pull failed:\n{e.stderr}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
 
 
 def _get_current_deps(
