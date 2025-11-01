@@ -80,6 +80,7 @@ gvit setup
 * ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
 * 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support
+* 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies
 
 ---
 
@@ -207,6 +208,30 @@ gvit pull --force-deps
 gvit pull --rebase origin main
 ```
 
+### Commit with Dependency Validation
+
+Smart `git commit` that validates your installed packages match your dependency files:
+
+```bash
+# Commit with automatic validation
+gvit commit -m "Add new feature"
+
+# Skip validation if needed
+gvit commit --skip-validation -m "Quick fix"
+
+# Pass any git commit options
+gvit commit -a -m "Update everything"
+gvit commit --amend
+```
+
+**What it validates:**
+- ✅ Detects added packages not declared in dependency files
+- ✅ Detects removed packages still declared in dependency files  
+- ✅ Detects version changes not reflected in pinned versions
+- ✅ Works with `requirements.txt`, `pyproject.toml`, and custom paths
+- ✅ Shows detailed diff of package changes (added/removed/modified)
+```
+
 ### Configuration Management
 
 ```bash
@@ -288,8 +313,16 @@ gvit tree
 1. **Deletes the environment backend** (venv folder or conda env)
 2. **Recreates it empty** with the same Python version
 3. **Reinstalls dependencies** from registry (unless `--no-deps`)
-4. **Updates registry** with new hashes and timestamp
+4. **Updates registry** with new hashes, freeze snapshot, and timestamp
 5. **Preserves registry entry** (unlike `delete` + `setup`)
+
+**`gvit commit`**: Validates dependencies before committing
+1. **Finds tracked environment** for current repository
+2. **Compares pip freeze outputs** (stored snapshot vs. current state)
+3. **Detects package changes**: added, removed, modified versions
+4. **Validates dependency files** to ensure changes are reflected
+5. **Shows detailed report** of discrepancies (if any)
+6. **Runs `git commit`** with any extra arguments you provide
 
 ### Environment Setup Process (common to all commands)
 
@@ -309,6 +342,7 @@ gvit tree
 6. **Tracks environment in registry**:
    - Saves environment metadata to `~/.config/gvit/envs/{env_name}.toml`
    - Records dependency file hashes for change detection
+   - Stores complete pip freeze snapshot for validation
    - Stores repository information (path, URL)
 7. **Validates and handles conflicts**: 
    - Detects existing environments
@@ -365,6 +399,11 @@ dev = "requirements-dev.txt"
 [deps.installed]
 _base_hash = "a1b2c3d4e5f6g7h8"  # SHA256 hash for change detection
 dev_hash = "i9j0k1l2m3n4o5p6"
+_freeze_hash = "q7r8s9t0u1v2w3x4"  # SHA256 hash of pip freeze output
+_freeze = """  # Complete pip freeze snapshot for validation
+package1==1.0.0
+package2==2.3.4
+"""
 installed_at = "2025-01-22T20:53:15.789012"
 ```
 
@@ -407,6 +446,7 @@ gvit/
 │   │   ├── init.py         # Init command logic
 │   │   ├── setup.py        # Setup command logic (existing repos)
 │   │   ├── pull.py         # Pull command with smart dependency sync
+│   │   ├── commit.py       # Commit command with dependency validation
 │   │   ├── tree.py         # Tree command (show command structure)
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
@@ -436,13 +476,14 @@ gvit/
 | **Init command** | ✅ | Initialize new Git repos with environment setup |
 | **Setup command** | ✅ | Create environment for existing repositories |
 | **Pull command** | ✅ | Smart git pull with automatic dependency sync |
+| **Commit command** | ✅ | Git commit with automatic dependency validation |
 | **Tree command** | ✅ | Visual command structure explorer |
 | **Venv backend** | ✅ | Python's built-in venv support |
 | **Conda backend** | ✅ | Complete conda integration |
 | **Virtualenv backend** | ✅ | Complete virtualenv integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
-| **Environment registry** | ✅ | Track environments with metadata and dependency hashes |
-| **Environment management** | ✅ | `list`, `show`, `delete`, `prune` commands |
+| **Environment registry** | ✅ | Track environments with metadata, dependency hashes, and freeze snapshots |
+| **Environment management** | ✅ | `list`, `show`, `delete`, `prune`, `reset` commands |
 | **Orphan cleanup** | ✅ | Automatic detection and removal of orphaned environments |
 | **Dependency resolution** | ✅ | Priority-based resolution (CLI > repo > local > default) |
 | **pyproject.toml support** | ✅ | Install base + optional dependencies (extras) |
@@ -450,14 +491,15 @@ gvit/
 | **Custom dependency paths** | ✅ | Flexible path specification via config or CLI |
 | **Environment validation** | ✅ | Detect conflicts, offer resolution options |
 | **TypedDict schemas** | ✅ | Full type safety with typed configuration schemas |
+| **Dependency validation** | ✅ | Validate installed packages match declared dependencies on commit |
 
 ### Next Releases
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| **0.2.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
-| **0.3.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
-| **0.4.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
+| **0.6.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
+| **0.6.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
+| **0.6.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
 | **1.0.0** | 🎯 Goal | Stable release with all core features |
 
 ---
@@ -631,27 +673,27 @@ source .venv/bin/activate
 ### Explore Available Commands
 
 ```bash
-# Show command tree
 gvit tree
 
 # Output:
-# gvit
-# ├── clone
-# ├── config/
-# │   ├── add-extra-deps
-# │   ├── remove-extra-deps
-# │   ├── setup
-# │   └── show
-# ├── envs/
-# │   ├── delete
-# │   ├── list
-# │   ├── prune
-# │   ├── reset
-# │   └── show
-# ├── pull
-# ├── init
-# ├── setup
-# └── tree
+gvit
+├── clone
+├── commit
+├── config
+│   ├── add-extra-deps
+│   ├── remove-extra-deps
+│   ├── setup
+│   └── show
+├── envs
+│   ├── delete
+│   ├── list
+│   ├── prune
+│   ├── reset
+│   └── show
+├── init
+├── pull
+├── setup
+└── tree
 ```
 
 ---
