@@ -62,20 +62,16 @@ def delete_venv(
 ) -> None:
     """Function to delete a virtual environment."""
     typer.echo(f'\n- Deleting environment "{venv_name}" backend...', nl=False)
-    try:
-        if backend == "conda":
-            conda_backend = CondaBackend()
-            conda_backend.delete_venv(venv_name, verbose)
-        elif backend == "venv":
-            venv_backend = VenvBackend()
-            venv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
-        elif backend == "virtualenv":
-            virtualenv_backend = VirtualenvBackend()
-            virtualenv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
-        typer.echo("✅")
-    except Exception as e:
-        typer.secho(f"\n❗ Failed to delete environment: {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        conda_backend.delete_venv(venv_name, verbose)
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        venv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        virtualenv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
+    typer.echo("✅")
 
 
 def install_dependencies(
@@ -165,6 +161,20 @@ def show_summary_message(registry_name: str, repo_path: Path, venv_path: Path, b
     typer.echo(f"📖  Registry -> {registry_name} (~/.config/gvit/envs/{registry_name}.toml)")
     typer.echo("🚀  Ready to start working -> ", nl=False)
     typer.secho(f'cd {str(repo_path)} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
+
+
+def get_freeze(venv_name: str, repo_path: Path, repo_url: str, backend: str) -> str | None:
+    """Function to get the complete pip freeze output for the environment."""
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        return conda_backend.get_freeze(venv_name, repo_url)
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        return venv_backend.get_freeze(venv_name, repo_path, repo_url)
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        return virtualenv_backend.get_freeze(venv_name, repo_path, repo_url)
+    return None
 
 
 def get_freeze_hash(venv_name: str, repo_path: Path, repo_url: str, backend: str) -> str | None:

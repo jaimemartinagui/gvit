@@ -10,7 +10,7 @@ from typing import cast, Any
 import toml
 import typer
 
-from gvit.backends.common import get_freeze_hash
+from gvit.backends.common import get_freeze, get_freeze_hash
 from gvit.utils.globals import ENVS_DIR
 from gvit.utils.schemas import RegistryFile, RegistryDeps
 
@@ -65,6 +65,7 @@ class EnvRegistry:
             deps_dict["installed"] = {
                 **self._get_deps_hashes(base_deps, extra_deps, repo_abs_path),
                 "_freeze_hash": get_freeze_hash(venv_name, Path(repo_path), repo_url, backend),
+                "_freeze": get_freeze(venv_name, Path(repo_path), repo_url, backend),
                 "installed_at": datetime.now().isoformat(),
             }
             venv_info["deps"] = cast(RegistryDeps, deps_dict)

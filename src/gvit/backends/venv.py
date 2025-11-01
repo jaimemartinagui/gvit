@@ -136,8 +136,8 @@ class VenvBackend:
         """Get the absolute path to the venv directory."""
         return str((repo_path / venv_name).resolve())
 
-    def get_freeze_hash(self, venv_name: str, repo_path: Path, repo_url: str) -> str | None:
-        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+    def get_freeze(self, venv_name: str, repo_path: Path, repo_url: str) -> str | None:
+        """Method to get the complete pip freeze output for the environment (excluding repo URL)."""
         try:
             venv_path = self.get_venv_path(venv_name, repo_path)
             pip_path = self._get_pip_executable_path(Path(venv_path))
@@ -149,10 +149,14 @@ class VenvBackend:
             )
             if not result.stdout:
                 return None
-            freeze = re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
-            return hashlib.sha256(freeze.encode()).hexdigest()[:16]
+            return re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
         except (subprocess.CalledProcessError, FileNotFoundError, Exception):
             return None
+
+    def get_freeze_hash(self, venv_name: str, repo_path: Path, repo_url: str) -> str | None:
+        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+        freeze = self.get_freeze(venv_name, repo_path, repo_url)
+        return hashlib.sha256(freeze.encode()).hexdigest()[:16] if freeze else None
 
     def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using the venv module or python -m venv."""

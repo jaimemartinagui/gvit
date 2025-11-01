@@ -171,8 +171,8 @@ class CondaBackend:
         except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
             return ""
 
-    def get_freeze_hash(self, venv_name: str, repo_url: str) -> str | None:
-        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+    def get_freeze(self, venv_name: str, repo_url: str) -> str | None:
+        """Method to get the complete pip freeze output for the environment (excluding repo URL)."""
         try:
             result = subprocess.run(
                 [self.path, "run", "-n", venv_name, "pip", "freeze"],
@@ -182,10 +182,14 @@ class CondaBackend:
             )
             if not result.stdout:
                 return None
-            freeze = re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
-            return hashlib.sha256(freeze.encode()).hexdigest()[:16]
+            return re.sub(rf'^.*{repo_url}.*$\n?', '', result.stdout, flags=re.MULTILINE)
         except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
             return None
+
+    def get_freeze_hash(self, venv_name: str, repo_url: str) -> str | None:
+        """Method to calculate SHA256 hash (first 16 chars) of pip freeze output for the environment."""
+        freeze = self.get_freeze(venv_name, repo_url)
+        return hashlib.sha256(freeze.encode()).hexdigest()[:16] if freeze else None
 
     def _get_path(self) -> str | None:
         """Try to find the conda executable in PATH or common install locations."""
@@ -250,5 +254,5 @@ class CondaBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"Failed to create conda environment:\n{e.stderr}", fg=typer.colors.RED)
+            typer.secho(f"❗ Failed to create conda environment:\n{e.stderr}", fg=typer.colors.RED)
             raise typer.Exit(code=1)

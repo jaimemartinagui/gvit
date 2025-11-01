@@ -3,6 +3,7 @@ Module with the Git class.
 """
 
 import subprocess
+from pathlib import Path
 
 import typer
 
@@ -113,3 +114,28 @@ class Git:
             return result.stdout.strip()
         except subprocess.CalledProcessError:
             return ""
+
+    def get_staged_deps_files(self, repo_path: Path) -> list[str]:
+        """Get dependency files that are currently staged."""
+        common_deps_files = [
+            "requirements.txt",
+            "requirements-dev.txt", 
+            "requirements-test.txt",
+            "pyproject.toml",
+            "setup.py",
+            "Pipfile",
+            "Pipfile.lock",
+            "poetry.lock",
+        ]
+        try:
+            result = subprocess.run(
+                ["git", "diff", "--cached", "--name-only"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            staged_files = result.stdout.strip().split("\n")
+            return [f for f in staged_files if any(dep in f for dep in common_deps_files)]
+        except subprocess.CalledProcessError:
+            return []
