@@ -74,7 +74,7 @@ def commit(
     # 5. Skip dependency validation and commit
     if not stored_freeze_hash:
         typer.secho(
-            "\n⚠️  No freeze hash found in registry. Dependencies were installed without tracking.\n",
+            "⚠️  No freeze hash found in registry. Dependencies were installed without tracking.\n",
             fg=typer.colors.YELLOW
         )
     if skip_validation or not env or not stored_freeze_hash:
