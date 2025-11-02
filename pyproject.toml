@@ -32,7 +32,7 @@ test = [
 ]
 
 [project.scripts]
-gvit = "gvit.cli:app"
+gvit = "gvit.cli:gvit_cli"
 
 [project.urls]
 Homepage = "https://github.com/jaimemartinagui/gvit"

@@ -76,6 +76,7 @@ gvit setup
 * 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support
 * 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies
 * 📄 **Status overview**: `status` command shows both Git and environment changes in one view
+* 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git
 
 ---
 
@@ -123,7 +124,7 @@ Basic clone with automatic environment creation:
 gvit clone https://github.com/user/repo.git
 ```
 
-![gvit clone example](assets/img/clone.png)
+<img src="assets/img/clone.png" alt="gvit clone example" width="400">
 
 **Advanced options:**
 
@@ -249,7 +250,7 @@ gvit status -e --target-dir path/to/repo
 - ✅ Clean overview of both code and dependency changes
 - ⚡ Quick way to see if you need to update dependency files
 
-![gvit status example](assets/img/status.png)
+<img src="assets/img/status.png" alt="gvit status example" width="400">
 
 ### Configuration Management
 
@@ -293,7 +294,35 @@ gvit envs prune --dry-run
 gvit envs prune --yes
 ```
 
-![gvit prune example](assets/img/prune.png)
+<img src="assets/img/prune.png" alt="gvit prune example" width="400">
+
+### Use Git Commands Directly
+
+`gvit` can replace `git` in your daily workflow! Any command not implemented in gvit automatically falls back to git:
+
+```bash
+# These work exactly like git commands
+gvit add file.py
+gvit diff --stat
+gvit log --oneline -10
+gvit branch -a
+gvit checkout -b feature
+gvit push origin main
+gvit stash
+gvit rebase main
+
+# Complete workflow with gvit
+gvit status              # gvit's enhanced status
+gvit add .
+gvit commit -m "feat"    # gvit's validated commit
+gvit push
+```
+
+**How it works:**
+- 🔍 gvit checks if the command is implemented (clone, commit, init, pull, status, etc.)
+- ✅ If implemented: runs gvit's enhanced version
+- 🔄 If not implemented: automatically forwards to `git`
+- 🎯 Seamless experience - just replace `git` with `gvit`
 
 ### Explore Commands
 
@@ -522,6 +551,7 @@ gvit/
 | **TypedDict schemas** | ✅ | Full type safety with typed configuration schemas |
 | **Dependency validation** | ✅ | Validate installed packages match declared dependencies on commit |
 | **Status command** | ✅ | Combined view of Git status and environment changes |
+| **Git command fallback** | ✅ | Automatic fallback to git for unknown commands |
 
 ### Next Releases
 
