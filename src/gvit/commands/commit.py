@@ -11,7 +11,7 @@ import typer
 from gvit.env_registry import EnvRegistry
 from gvit.utils.utils import load_local_config, get_verbose
 from gvit.utils.validators import validate_directory, validate_git_repo
-from gvit.backends.common import get_freeze, get_freeze_hash
+from gvit.backends.common import get_freeze, get_freeze_hash, get_freeze_diff, show_freeze_diff
 from gvit.git import Git
 
 
@@ -98,8 +98,8 @@ def commit(
         current_freeze = get_freeze(venv_name, repo_path, env["repository"]["url"], backend)
 
         if stored_freeze and current_freeze:
-            added, removed, changed = _get_freeze_diff(stored_freeze, current_freeze)
-            _show_freeze_diff(added, removed, changed)
+            added, removed, changed = get_freeze_diff(stored_freeze, current_freeze)
+            show_freeze_diff(added, removed, changed)
             _ask_user()
 
             # deps_files_paths = {
@@ -125,62 +125,9 @@ def commit(
     typer.echo("🎉 Commit successful!")
 
 
-def _get_freeze_diff(
-    stored_freeze: str, current_freeze: str
-) -> tuple[dict[str, str], dict[str, str], dict[str, tuple[str, str]]]:
-    """Get the added, removed and modified packages."""
-    def parse_freeze(text: str) -> dict[str, str]:
-        """Convert a pip freeze text into a {package: version} dict."""
-        packages = {}
-        for line in text.strip().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if "==" in line:
-                pkg, ver = line.split("==", 1)
-                packages[pkg.lower()] = ver
-            else:
-                # handle non-standard lines (like editable installs or VCS)
-                packages[line.lower()] = None
-        return packages
-
-    old = parse_freeze(stored_freeze)
-    new = parse_freeze(current_freeze)
-
-    added = {pkg: new[pkg] for pkg in new.keys() - old.keys()}
-    removed = {pkg: old[pkg] for pkg in old.keys() - new.keys()}
-    changed = {pkg: (old[pkg], new[pkg]) for pkg in old.keys() & new.keys() if old[pkg] != new[pkg]}
-
-    return added, removed, changed
-
-
-def _show_freeze_diff(added: dict[str, str], removed: dict[str, str], changed: dict[str, tuple[str, str]]) -> None:
-    """Show summary of package changes between two pip freeze outputs."""
-    if added:
-        typer.echo("  📦 Added packages:")
-        for pkg, ver in sorted(added.items()):
-            typer.secho(f"    + {pkg}=={ver}" if ver else f"  + {pkg}", fg=typer.colors.GREEN)
-        typer.echo()
-
-    if removed:
-        typer.echo("  📦 Removed packages:")
-        for pkg, ver in sorted(removed.items()):
-            typer.secho(f"    - {pkg}=={ver}" if ver else f"  - {pkg}", fg=typer.colors.RED)
-        typer.echo()
-
-    if changed:
-        typer.echo("  📦 Package versions changed:")
-        for pkg, (old_v, new_v) in sorted(changed.items()):
-            typer.secho(f"    ~ {pkg}: {old_v} → {new_v}", fg=typer.colors.YELLOW)
-        typer.echo()
-
-    if not (added or removed or changed):
-        typer.secho("✅ No changes detected.", fg=typer.colors.GREEN)
-
-
 def _ask_user() -> None:
     """Function to ask the user what to do.º"""
-    typer.echo("  What would you like to do?")
+    typer.echo("\n  What would you like to do?")
     choice = typer.prompt(
         "    [1] Continue with commit\n"
         "    [2] Abort commit\n"

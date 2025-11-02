@@ -60,12 +60,6 @@ gvit setup
 - Focus on modern Python packaging (`pyproject.toml`).
 - Need advanced dependency resolution.
 
-### Examples
-
-![gvit clone example](assets/img/clone.png)
-
-![gvit prune example](assets/img/prune.png)
-
 ---
 
 ## ⚙️ What `gvit` does
@@ -81,6 +75,7 @@ gvit setup
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
 * 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support
 * 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies
+* 📄 **Status overview**: `status` command shows both Git and environment changes in one view
 
 ---
 
@@ -127,6 +122,8 @@ Basic clone with automatic environment creation:
 ```bash
 gvit clone https://github.com/user/repo.git
 ```
+
+![gvit clone example](assets/img/clone.png)
 
 **Advanced options:**
 
@@ -230,7 +227,29 @@ gvit commit --amend
 - ✅ Detects version changes not reflected in pinned versions
 - ✅ Works with `requirements.txt`, `pyproject.toml`, and custom paths
 - ✅ Shows detailed diff of package changes (added/removed/modified)
+
+### Check Status
+
 ```
+Combined view of Git status and environment changes:
+
+# Show just repository (same as `git status`)
+gvit status
+
+# Show repository and environment status
+gvit status
+
+# In a specific directory
+gvit status -e --target-dir path/to/repo
+```
+
+**What it shows:**
+- 📂 **Repository Status**: Standard `git status` output
+- 🐍 **Environment Status**: Packages added/removed/modified since last tracking
+- ✅ Clean overview of both code and dependency changes
+- ⚡ Quick way to see if you need to update dependency files
+
+![gvit status example](assets/img/status.png)
 
 ### Configuration Management
 
@@ -273,6 +292,8 @@ gvit envs prune --dry-run
 # Auto-confirm removal
 gvit envs prune --yes
 ```
+
+![gvit prune example](assets/img/prune.png)
 
 ### Explore Commands
 
@@ -323,6 +344,13 @@ gvit tree
 4. **Validates dependency files** to ensure changes are reflected
 5. **Shows detailed report** of discrepancies (if any)
 6. **Runs `git commit`** with any extra arguments you provide
+
+**`gvit status`**: Shows combined repository and environment status
+1. **Displays `git status` output** for repository changes
+2. **Finds tracked environment** for current repository
+3. **Compares pip freeze outputs** (stored snapshot vs. current state)
+4. **Shows package changes**: added, removed, modified versions
+5. **Provides clean overview** of both code and dependency changes
 
 ### Environment Setup Process (common to all commands)
 
@@ -447,6 +475,7 @@ gvit/
 │   │   ├── setup.py        # Setup command logic (existing repos)
 │   │   ├── pull.py         # Pull command with smart dependency sync
 │   │   ├── commit.py       # Commit command with dependency validation
+│   │   ├── status.py       # Status command (git + environment overview)
 │   │   ├── tree.py         # Tree command (show command structure)
 │   │   ├── config.py       # Config management commands
 │   │   └── envs.py         # Environment management commands
@@ -492,6 +521,7 @@ gvit/
 | **Environment validation** | ✅ | Detect conflicts, offer resolution options |
 | **TypedDict schemas** | ✅ | Full type safety with typed configuration schemas |
 | **Dependency validation** | ✅ | Validate installed packages match declared dependencies on commit |
+| **Status command** | ✅ | Combined view of Git status and environment changes |
 
 ### Next Releases
 
@@ -557,12 +587,12 @@ gvit clone https://github.com/user/project.git --extra-deps dev,test
 
 ```bash
 # Override everything from CLI
-gvit clone https://github.com/user/project.git \\
-  --venv-name custom-env \\
-  --python 3.12 \\
-  --backend conda \\
-  --base-deps requirements/prod.txt \\
-  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt \\
+gvit clone https://github.com/user/project.git
+  --venv-name custom-env
+  --python 3.12
+  --backend conda
+  --base-deps requirements/prod.txt
+  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt
   --verbose
 ```
 
@@ -693,6 +723,7 @@ gvit
 ├── init
 ├── pull
 ├── setup
+├── status
 └── tree
 ```
 

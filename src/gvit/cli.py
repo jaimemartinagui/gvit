@@ -9,6 +9,7 @@ import typer
 from gvit.commands.pull import pull
 from gvit.commands.clone import clone
 from gvit.commands.commit import commit
+from gvit.commands.status import status
 from gvit.commands.init import init
 from gvit.commands.setup import setup as setup_repo
 from gvit.commands.tree import tree
@@ -39,6 +40,7 @@ app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options"
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(commit)
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(init)
 app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(pull)
+app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})(status)
 app.command(name="setup")(setup_repo)
 app.command()(tree)
 

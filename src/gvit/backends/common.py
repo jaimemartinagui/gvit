@@ -239,6 +239,63 @@ def install_dependencies_from_file(
     return False
 
 
+def get_freeze_diff(
+    stored_freeze: str, current_freeze: str
+) -> tuple[dict[str, str], dict[str, str], dict[str, tuple[str, str]]]:
+    """Get the added, removed and modified packages."""
+    def parse_freeze(text: str) -> dict[str, str]:
+        """Convert a pip freeze text into a {package: version} dict."""
+        packages = {}
+        for line in text.strip().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "==" in line:
+                pkg, ver = line.split("==", 1)
+                packages[pkg.lower()] = ver
+            else:
+                # handle non-standard lines (like editable installs or VCS)
+                packages[line.lower()] = None
+        return packages
+
+    old = parse_freeze(stored_freeze)
+    new = parse_freeze(current_freeze)
+
+    added = {pkg: new[pkg] for pkg in new.keys() - old.keys()}
+    removed = {pkg: old[pkg] for pkg in old.keys() - new.keys()}
+    changed = {pkg: (old[pkg], new[pkg]) for pkg in old.keys() & new.keys() if old[pkg] != new[pkg]}
+
+    return added, removed, changed
+
+
+def show_freeze_diff(added: dict[str, str], removed: dict[str, str], changed: dict[str, tuple[str, str]]) -> None:
+    """Show summary of package changes between two pip freeze outputs."""
+    if added:
+        typer.echo("  📦 Added packages:")
+        for pkg, ver in sorted(added.items()):
+            typer.secho(f"    + {pkg}=={ver}" if ver else f"  + {pkg}", fg=typer.colors.GREEN)
+        typer.echo()
+
+    if removed:
+        typer.echo("  📦 Removed packages:")
+        for pkg, ver in sorted(removed.items()):
+            typer.secho(f"    - {pkg}=={ver}" if ver else f"  - {pkg}", fg=typer.colors.RED)
+        typer.echo()
+
+    if changed:
+        typer.echo("  📦 Package versions changed:")
+        for pkg, (old_v, new_v) in sorted(changed.items()):
+            typer.secho(f"    ~ {pkg}: {old_v} → {new_v}", fg=typer.colors.YELLOW)
+        typer.echo()
+
+    if not (added or removed or changed):
+        typer.secho("  ✅ No changes detected.", fg=typer.colors.GREEN)
+        typer.secho("  Environment is in sync with tracked state.", dim=True)
+    else:
+        total_changes = len(added) + len(removed) + len(changed)
+        typer.secho(f"  Total changes: {total_changes}", fg=typer.colors.BRIGHT_BLACK)
+
+
 def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
     """Resolve base dependencies."""
     return base_deps or repo_config.get("deps", {}).get("_base") or get_base_deps(local_config)

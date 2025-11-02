@@ -11,6 +11,60 @@ import typer
 class Git:
     """Class with the methods to run Git commands."""
 
+    def status(self, repo_path: Path, extra_args: list[str] | None = None) -> None:
+        """Show git status output with color highlighting."""
+        try:
+            result = subprocess.run(
+                ["git", "status"] + (extra_args or []),
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            current_section = None
+            sections = {
+                "staged": "Changes to be committed:",
+                "unstaged": "Changes not staged for commit:",
+                "untracked": "Untracked files:"
+            }
+            for line in result.stdout.strip().split("\n"):
+                if match := next((k for k, v in sections.items() if v in line), None):
+                    current_section = match
+                # Section headers
+                if line.strip().startswith(tuple(sections.values())):
+                    typer.secho(f"  {line}", fg=typer.colors.YELLOW, bold=True)
+                # Staged files (new, modified, deleted) - colored GREEN
+                elif current_section == "staged" and "new file:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.GREEN)
+                elif current_section == "staged" and "modified:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.GREEN)
+                elif current_section == "staged" and "deleted:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.GREEN)
+                elif current_section == "staged" and "renamed:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.GREEN)
+                # Unstaged files (modified, deleted) - colored RED
+                elif current_section == "unstaged" and "modified:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.RED)
+                elif current_section == "unstaged" and "deleted:" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.RED)
+                # Untracked files - colored RED
+                elif line.strip() and not line.strip().startswith(("(", "no changes", "nothing to commit")):
+                    # Check if it's likely a file path (starts with tab or spaces followed by text)
+                    if line.startswith(("\t", "  ")) and not "use" in line.lower():
+                        typer.secho(f"  {line}", fg=typer.colors.RED)
+                    else:
+                        typer.echo(f"  {line}")
+                # Hints and other text
+                elif "use" in line.lower() or "(" in line:
+                    typer.secho(f"  {line}", fg=typer.colors.BRIGHT_BLACK, dim=True)
+                # "no changes" / "nothing to commit"
+                elif "no changes" in line.lower() or "nothing to commit" in line.lower():
+                    typer.secho(f"  {line}", fg=typer.colors.BRIGHT_BLACK)
+                else:
+                    typer.echo(f"  {line}")
+        except subprocess.CalledProcessError as e:
+            typer.secho(f"  ❗ Failed to get git status: {e}", fg=typer.colors.RED)
+
     def clone(
         self, repo_url: str, target_dir: str, extra_args: list[str] | None = None, verbose: bool = False
     ) -> None:
