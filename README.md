@@ -324,6 +324,28 @@ gvit push
 - 🔄 If not implemented: automatically forwards to `git`
 - 🎯 Seamless experience - just replace `git` with `gvit`
 
+**Git aliases support:**
+
+`gvit` automatically resolves your git aliases and uses gvit's enhanced versions when available!
+
+```bash
+# If you have git aliases configured:
+# git config --global alias.st status
+# git config --global alias.ci commit
+# git config --global alias.co checkout
+
+# These will use gvit's enhanced versions
+gvit st      # → gvit status (with environment tracking)
+gvit ci -m   # → gvit commit (with validation)
+
+# This will use git directly
+gvit co main # → git checkout main
+```
+
+- 🔗 Respects all your existing git aliases
+- 🚀 Automatically uses gvit's enhanced versions when the alias resolves to a gvit command
+- 🔄 Falls back to git for non-gvit commands
+
 ### Explore Commands
 
 ```bash
