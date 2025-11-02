@@ -16,7 +16,13 @@ Git-aware Virtual Environment Manager
 
 **Automates virtual environment management for Git repositories.**
 
-`gvit` is a command-line tool that automatically creates and manages virtual environments when you clone repositories. Its goal is to eliminate friction between **version control** and **Python environment management**.
+---
+
+## ⭐ Vision
+
+> *“One repo, its own environment — without thinking about it.”*
+
+The goal of **`gvit`** CLI is to eliminate the need to manually create or update virtual environments. No more friction between version control and Python environment management. Git and Python should work together seamlessly — this tool makes it possible.
 
 ---
 
@@ -64,19 +70,18 @@ gvit setup
 
 ## ⚙️ What `gvit` does
 
-* 🪄 **Automatically creates environments** when cloning or initializing repos
-* 📦 **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths
-* 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files
-* 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`)
-* 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes
-* 🧘 **Cleans orphaned environments** automatically with `prune` command
-* 🌳 **Visual command tree** to explore available commands
-* ⚡ **Smart priority resolution**: CLI options → repo config → local config → defaults
-* 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings
-* 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support
-* 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies
-* 📄 **Status overview**: `status` command shows both Git and environment changes in one view
-* 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git
+* 🪄 **Automatically creates environments** when cloning or initializing repos.
+* 📦 **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths.
+* 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files.
+* 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git.
+* 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`).
+* 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes.
+* 🧘 **Cleans orphaned environments** automatically with `prune` command.
+* 🌳 **Visual command tree** to explore available commands.
+* 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings.
+* 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support.
+* 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies.
+* 📄 **Status overview**: `status` command shows both Git and environment changes in one view.
 
 ---
 
@@ -110,7 +115,7 @@ Or specify options directly:
 gvit config setup --backend venv --python 3.11 --base-deps requirements.txt
 
 # or use conda
-gvit config setup --backend conda --python 3.11
+gvit config setup --backend conda --python 3.12
 
 # or use virtualenv (faster, more features)
 gvit config setup --backend virtualenv --python 3.11
@@ -156,14 +161,14 @@ Similar to `git init` but with environment setup:
 # In current directory
 gvit init
 
-# In specific directory
-gvit init my-project
+# In specific directory (--target-dir)
+gvit init -t my-project
 
 # With remote repository
 gvit init --remote-url https://github.com/user/my-project.git
 
 # With all options
-gvit init my-project \
+gvit init -t my-project \
   --remote-url https://github.com/user/my-project.git \
   --python 3.12 \
   --extra-deps dev,test
@@ -178,8 +183,8 @@ If you already have a cloned repository and want to set up the environment:
 cd my-existing-repo
 gvit setup
 
-# Or specify a different directory
-gvit setup path/to/repo
+# Or specify a different directory (--target-dir)
+gvit setup -t path/to/repo
 
 # With custom options
 gvit setup --python 3.12 --extra-deps dev,test
@@ -231,14 +236,14 @@ gvit commit --amend
 
 ### Check Status
 
-```
 Combined view of Git status and environment changes:
 
+```
 # Show just repository (same as `git status`)
 gvit status
 
 # Show repository and environment status
-gvit status
+gvit status -e
 
 # In a specific directory
 gvit status -e --target-dir path/to/repo
@@ -639,12 +644,12 @@ gvit clone https://github.com/user/project.git --extra-deps dev,test
 
 ```bash
 # Override everything from CLI
-gvit clone https://github.com/user/project.git
-  --venv-name custom-env
-  --python 3.12
-  --backend conda
-  --base-deps requirements/prod.txt
-  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt
+gvit clone https://github.com/user/project.git \
+  --venv-name custom-env \
+  --python 3.12 \
+  --backend conda \
+  --base-deps requirements/prod.txt \
+  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt \
   --verbose
 ```
 
@@ -785,10 +790,10 @@ gvit
 
 Contributions are welcome! Areas we'd love help with:
 
-- Additional backends (pyenv, poetry)
-- `checkout` and other commands
-- Cross-platform testing
-- Documentation improvements
+- Additional backends (pyenv, poetry).
+- `checkout` and other commands.
+- Cross-platform testing.
+- Documentation improvements.
 
 Open an issue or submit a pull request on [GitHub](https://github.com/jaimemartinagui/gvit).
 
@@ -797,11 +802,3 @@ Open an issue or submit a pull request on [GitHub](https://github.com/jaimemarti
 ## ⚖️ License
 
 MIT © 2025
-
----
-
-## ⭐ Vision
-
-> *“One repo, its own environment — without thinking about it.”*
-
-The goal of **`gvit`** is to eliminate the need to manually create or update virtual environments. Git and Python should work together seamlessly — this tool makes it possible.
