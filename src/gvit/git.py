@@ -29,7 +29,7 @@ class Git:
             sys.exit(1)
 
     def command_exists(self, command: str) -> bool:
-        """Method to check if a Git command exists (exit code 0) or not.º"""
+        """Method to check if a Git command exists (exit code 0) or not."""
         result = subprocess.run(
             ["git", command, "--help"],
             capture_output=True,
@@ -163,6 +163,22 @@ class Git:
                     typer.echo(f"  {line}")
         except subprocess.CalledProcessError as e:
             typer.secho(f"  ❗ Failed to get git status: {e}", fg=typer.colors.RED)
+
+    def resolve_alias(self, alias: str) -> str:
+        """Resolve a git alias to its underlying command."""
+        try:
+            result = subprocess.run(
+                ["git", "config", "--get", f"alias.{alias}"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                # Return the resolved alias (just the first word if it's a compound command)
+                return result.stdout.strip().split()[0]
+        except Exception:
+            pass
+        return alias
 
     def add_remote(self, target_dir: str, remote_url: str, verbose: bool = False) -> None:
         """Add remote origin to the Git repository."""

@@ -75,7 +75,11 @@ def gvit_cli() -> None:
         gvit_commands = set(click_app.commands.keys()) if isinstance(click_app, Group) else set()
         if command not in gvit_commands and not command.startswith("-"):
             git = Git()
-            if git.command_exists(command):
+            resolved_command = git.resolve_alias(command)
+            # If it is a resolved gvit command, use that instead
+            if resolved_command in gvit_commands:
+                sys.argv[1] = resolved_command
+            elif git.command_exists(command):
                 git.run(sys.argv[1:])
 
     # Otherwise, let Typer handle it
