@@ -9,12 +9,22 @@
  ░█████░██    ░███    ░██    ░████ 
        ░██                         
  ░███████                          
-
-
-Git-aware Virtual Environment Manager
 ```
 
+<div align="center">
+
+**Git-aware Virtual Environment Manager**
+
 **Automates virtual environment management for Git repositories.**
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://img.shields.io/pypi/v/gvit.svg)](https://pypi.org/project/gvit/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen.svg)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-33%25-orange.svg)](#-testing)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+</div>
 
 ---
 
