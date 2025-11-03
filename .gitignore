@@ -38,13 +38,17 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+tests/htmlcov/
 .tox/
 .nox/
 .coverage
 .coverage.*
+tests/.coverage
+tests/.coverage.*
 .cache
 nosetests.xml
 coverage.xml
+tests/coverage.xml
 *.cover
 *.py.cover
 .hypothesis/

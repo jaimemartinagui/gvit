@@ -18,6 +18,35 @@ Git-aware Virtual Environment Manager
 
 ---
 
+## 📋 Table of Contents
+
+- [Vision](#-vision)
+- [Motivation](#-motivation)
+- [What gvit does](#️-what-gvit-does)
+- [Installation](#-installation)
+- [Usage](#-usage)
+  - [Initial Configuration](#initial-configuration)
+  - [Clone a Repository](#clone-a-repository)
+  - [Initialize a New Project](#initialize-a-new-project)
+  - [Setup an Existing Repository](#setup-an-existing-repository)
+  - [Pull Changes](#pull-changes-and-update-dependencies)
+  - [Commit with Validation](#commit-with-dependency-validation)
+  - [Check Status](#check-status)
+  - [Configuration Management](#configuration-management)
+  - [Environment Management](#environment-management)
+  - [Git Commands](#use-git-commands-directly)
+  - [Explore Commands](#explore-commands)
+- [How it works](#-how-it-works)
+- [Configuration](#️-configuration)
+- [Architecture](#-architecture)
+- [Roadmap](#-roadmap)
+- [Example Workflows](#-example-workflows)
+- [Testing](#-testing)
+- [Contributing](#-contributing)
+- [License](#️-license)
+
+---
+
 ## ⭐ Vision
 
 > *“One repo, its own environment — without thinking about it.”*
@@ -87,14 +116,42 @@ gvit setup
 
 ## 💻 Installation
 
+⚠️ **Important:** Install `gvit` **globally**, not in a project-specific virtual environment. Since gvit manages virtual environments, it needs to be available system-wide.
+
+### Recommended: pipx (isolated global install)
+
 ```bash
-pip install gvit
+# Install pipx if you don't have it
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+
+# Install gvit with pipx
+pipx install gvit
 ```
 
-Or with `pipx` (recommended for CLI tools):
+**Why pipx?**
+- ✅ Installs CLI tools in isolated environments
+- ✅ Makes them globally available
+- ✅ Prevents dependency conflicts
+- ✅ Easy to upgrade and uninstall
+
+### Alternative: pip (global install)
 
 ```bash
-pipx install gvit
+# Install globally (may require sudo on some systems)
+pip install gvit
+
+# Or with --user flag
+pip install --user gvit
+```
+
+### Verify Installation
+
+```bash
+gvit --version
+
+# Should work from any directory
+cd ~ && gvit --version
 ```
 
 ---
@@ -817,6 +874,37 @@ gvit
 
 ---
 
+## 🧪 Testing
+
+gvit has a comprehensive test suite with 49 tests and growing coverage.
+
+```bash
+# Install test dependencies
+pip install -e ".[test]"
+
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src/gvit --cov-report=html
+open tests/htmlcov/index.html
+```
+
+**Test Suite:**
+- ✅ 38 unit tests (fast, isolated)
+- ✅ 11 integration tests (end-to-end)
+- ✅ 33% coverage (target: 80%+)
+- ✅ Fully isolated (no system side effects)
+
+**Documentation:** See [tests/README.md](tests/README.md) for the complete testing guide including:
+- How to run and write tests
+- Coverage analysis
+- Available fixtures
+- Best practices
+- CI/CD integration
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Areas we'd love help with:
@@ -825,6 +913,7 @@ Contributions are welcome! Areas we'd love help with:
 - `checkout` and other commands.
 - Cross-platform testing.
 - Documentation improvements.
+- **Writing tests** - See [tests/README.md](tests/README.md)
 
 Open an issue or submit a pull request on [GitHub](https://github.com/jaimemartinagui/gvit).
 

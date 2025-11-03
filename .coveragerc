@@ -1,0 +1,19 @@
+[run]
+source = src/gvit
+data_file = tests/.coverage
+omit = 
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */site-packages/*
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+
+[html]
+directory = tests/htmlcov
+
+[xml]
+output = tests/coverage.xml
