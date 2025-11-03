@@ -20,11 +20,11 @@ Git-aware Virtual Environment Manager
 
 ## 📋 Table of Contents
 
-- [⭐ Vision](#-vision)
-- [🚀 Motivation](#-motivation)
-- [☑️ What gvit does](#️-what-gvit-does)
-- [💻 Installation](#-installation)
-- [🧩 Usage](#-usage)
+- ⭐ [Vision](#-vision)
+- 🚀 [Motivation](#-motivation)
+- ☑️ [What gvit does](#️-what-gvit-does)
+- 💻 [Installation](#-installation)
+- 🧩 [Usage](#-usage)
   - [Initial Configuration](#initial-configuration)
   - [Clone a Repository](#clone-a-repository)
   - [Initialize a New Project](#initialize-a-new-project)
@@ -36,13 +36,13 @@ Git-aware Virtual Environment Manager
   - [Environment Management](#environment-management)
   - [Git Commands](#use-git-commands-directly)
   - [Explore Commands](#explore-commands)
-- [🧠 How it works](#-how-it-works)
-- [⚙️ Configuration](#️-configuration)
-- [🧱 Architecture](#-architecture)
-- [🧭 Roadmap](#-roadmap)
-- [🧪 Testing](#-testing)
-- [🤝 Contributing](#-contributing)
-- [⚖️ License](#️-license)
+- 🧠 [How it works](#-how-it-works)
+- ⚙️ [Configuration](#️-configuration)
+- 🧱 [Architecture](#-architecture)
+- 🧭 [Roadmap](#-roadmap)
+- 🧪 [Testing](#-testing)
+- 🤝 [Contributing](#-contributing)
+- ⚖️ [License](#️-license)
 
 ---
 

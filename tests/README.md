@@ -4,17 +4,17 @@ Comprehensive guide for testing `gvit` - from quick start to advanced coverage a
 
 ## 📋 Table of Contents
 
-- [🚀 Quick Start](#-quick-start)
-- [📁 Test Structure](#-test-structure)
-- [🏃 Running Tests](#-running-tests)
-- [✍️ Writing Tests](#-writing-tests)
-- [📊 Coverage](#-coverage)
-- [🔧 Fixtures](#-fixtures)
-- [✅ Best Practices](#-best-practices)
-- [🐛 Troubleshooting](#-troubleshooting)
-- [🎯 Next Steps](#-next-steps)
-- [📚 Resources](#-resources)
-- [📈 Current Status](#-current-status)
+- 🚀 [Quick Start](#-quick-start)
+- 📁 [Test Structure](#-test-structure)
+- 🏃 [Running Tests](#-running-tests)
+- ✍️ [Writing Tests](#-writing-tests)
+- 📊 [Coverage](#-coverage)
+- 🔧 [Fixtures](#-fixtures)
+- ✅ [Best Practices](#-best-practices)
+- 🐛 [Troubleshooting](#-troubleshooting)
+- 🎯 [Next Steps](#-next-steps)
+- 📚 [Resources](#-resources)
+- 📈 [Current Status](#-current-status)
 
 ---
 
