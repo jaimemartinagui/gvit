@@ -132,6 +132,10 @@ class VenvBackend:
             else f"source {venv_path}/bin/activate"
         )
 
+    def get_deactivate_cmd(self) -> str:
+        """Get the command to deactivate the virtual environment."""
+        return "deactivate"
+
     def get_venv_path(self, venv_name: str, repo_path: Path) -> str:
         """Get the absolute path to the venv directory."""
         return str((repo_path / venv_name).resolve())
@@ -168,10 +172,13 @@ class VenvBackend:
                 capture_output=True,
                 text=True,
             )
+            typer.echo("✅")
+            if python_cmd != f"python{python}":
+                typer.secho(f"  ⚠️  python{python} executable not available, {python_cmd} was used.", fg=typer.colors.YELLOW)
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"Failed to create venv:\n{e.stderr}", fg=typer.colors.RED)
+            typer.secho(f"❗ Failed to create venv:\n{e.stderr}", fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
     def _get_python_cmd(self, python_version: str) -> str:
@@ -207,9 +214,9 @@ class VenvBackend:
 
         # If no match found, use current Python
         typer.secho(
-            f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})",
-            fg=typer.colors.YELLOW
+            f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})", fg=typer.colors.YELLOW
         )
+
         return sys.executable
 
     def _get_pip_executable_path(self, venv_path: Path) -> str:

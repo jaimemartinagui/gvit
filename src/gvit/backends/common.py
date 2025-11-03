@@ -53,7 +53,6 @@ def create_venv(
     else:
         raise Exception(f'Backend "{backend}" not supported.')
 
-    typer.echo("✅")
     return registry_name, venv_name, venv_path
 
 

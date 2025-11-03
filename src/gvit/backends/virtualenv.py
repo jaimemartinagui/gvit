@@ -3,6 +3,7 @@ Module with the virtualenv backend class.
 """
 
 import re
+import sys
 from pathlib import Path
 import subprocess
 import platform
@@ -144,6 +145,10 @@ class VirtualenvBackend:
             else f"source {venv_path}/bin/activate"
         )
 
+    def get_deactivate_cmd(self) -> str:
+        """Get the command to deactivate the virtual environment."""
+        return "deactivate"
+
     def get_venv_path(self, venv_name: str, repo_path: Path) -> str:
         """Get the absolute path to the virtualenv directory."""
         return str((repo_path / venv_name).resolve())
@@ -173,17 +178,59 @@ class VirtualenvBackend:
     def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using virtualenv."""
         try:
+            python_cmd = self._get_python_cmd(python)
             result = subprocess.run(
-                ["virtualenv", "-p", f"python{python}", venv_path],
+                ["virtualenv", "-p", python_cmd, venv_path],
                 check=True,
                 capture_output=True,
                 text=True,
             )
+            typer.echo("✅")
+            if python_cmd != f"python{python}":
+                typer.secho(f"  ⚠️  python{python} executable not available, {python_cmd} was used.", fg=typer.colors.YELLOW)
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"Failed to create virtualenv:\n{e.stderr}", fg=typer.colors.RED)
+            typer.secho(f"❗ Failed to create virtualenv:\n{e.stderr}", fg=typer.colors.RED)
             raise typer.Exit(code=1)
+
+    def _get_python_cmd(self, python_version: str) -> str:
+        """
+        Get the python command for the specified version.
+        Tries: python{version} > python{major}.{minor} > python{major} > python > current python
+            Example: "3.11" -> try python3.11, python3, python.
+        """
+        candidates = []
+        candidates.append(f"python{python_version}")
+        if "." in python_version:
+            major = python_version.split(".")[0]
+            candidates.append(f"python{major}")
+
+        # Fallbacks
+        candidates.extend(["python"])
+
+        for cmd in set(candidates):
+            if shutil.which(cmd):
+                try:
+                    result = subprocess.run(
+                        [cmd, "--version"],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    version_str = result.stdout.strip()
+                    # Check if version matches (fuzzy match on major.minor)
+                    if python_version in version_str or python_version.split(".")[0] in version_str:
+                        return cmd
+                except subprocess.CalledProcessError:
+                    continue
+
+        # If no match found, use current Python
+        typer.secho(
+            f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})", fg=typer.colors.YELLOW
+        )
+
+        return sys.executable
 
     def _get_pip_executable_path(self, venv_path: Path) -> str:
         """Get the pip executable path inside the virtualenv."""

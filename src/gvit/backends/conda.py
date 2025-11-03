@@ -154,6 +154,10 @@ class CondaBackend:
         """Method to get the command to activate the environment."""
         return f"conda activate {venv_name}"
 
+    def get_deactivate_cmd(self) -> str:
+        """Method to get the command to deactivate the environment."""
+        return "conda deactivate"
+
     def get_venv_path(self, venv_name: str) -> str:
         """Get the absolute path to the conda environment directory."""
         try:
@@ -251,6 +255,7 @@ class CondaBackend:
                 capture_output=True,
                 text=True,
             )
+            typer.echo("✅")
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:

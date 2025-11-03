@@ -27,6 +27,12 @@ def status(
     - Git repository status (git status output).
 
     - Environment status if -e is provided (packages added/removed/modified since last tracking).
+
+    Any extra options will be passed directly to `git status`.
+
+    Long options do not conflict between `gvit status` and `git status`.
+
+    Short options might conflict; in that case, use the long form for the `git status` options.
     """
     # 1. Resolve and validate directory
     target_dir_ = Path(target_dir).resolve()

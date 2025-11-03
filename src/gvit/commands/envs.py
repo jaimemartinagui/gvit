@@ -55,6 +55,93 @@ def list_() -> None:
         typer.secho(f"cd {repo_path} && {activate_cmd}", fg=typer.colors.YELLOW)
 
 
+def show_activate(
+    venv_name: str = typer.Option(None, "--venv-name", "-n", help="Name of the virtual environment."),
+    relative: bool = typer.Option(False, "--relative", "-r", is_flag=True, help="Show the environment path as relative.")
+) -> None:
+    """
+    Show the activate command for an environment.
+
+    If no environment is provided with the -n option, it looks in the registry for an existing
+    environment in the current directory.
+
+    Use the following command to directly activate the environment -> eval "$(gvit envs show-activate)"
+    """
+    env_registry = EnvRegistry()
+    if venv_name:
+        env = env_registry.load_environment_info(venv_name)
+        if env is None:
+            typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
+            return None
+    else:
+        cwd = Path(".").resolve()
+        envs = [env for env in env_registry.get_environments() if Path(env['repository']['path']) == cwd]
+        if not envs:
+            typer.secho("⚠️  No tracked environment found for this repository.", fg=typer.colors.YELLOW)
+            return None
+        env = envs[0]
+
+    backend = env["environment"]["backend"]
+    venv_path = env["environment"]["path"]
+    venv_name = env["environment"]["name"]
+
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        activate_cmd = conda_backend.get_activate_cmd(venv_name)
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        activate_cmd = venv_backend.get_activate_cmd(venv_path, relative)
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        activate_cmd = virtualenv_backend.get_activate_cmd(venv_path, relative)
+    else:
+        activate_cmd = f"# Activate command for {backend} not available"
+
+    typer.secho(activate_cmd, fg=typer.colors.YELLOW)
+
+
+def show_deactivate(
+    venv_name: str = typer.Option(None, "--venv-name", "-n", help="Name of the virtual environment.")
+) -> None:
+    """
+    Show the deactivate command for an environment.
+
+    If no environment is provided with the -n option, it looks in the registry for an existing
+    environment in the current directory.
+    
+    Use the following command to directly deactivate the environment -> eval "$(gvit envs show-deactivate)"
+    """
+    env_registry = EnvRegistry()
+    if venv_name:
+        env = env_registry.load_environment_info(venv_name)
+        if env is None:
+            typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
+            return None
+    else:
+        cwd = Path(".").resolve()
+        envs = [env for env in env_registry.get_environments() if Path(env['repository']['path']) == cwd]
+        if not envs:
+            typer.secho("⚠️  No tracked environment found for this repository.", fg=typer.colors.YELLOW)
+            return None
+        env = envs[0]
+
+    backend = env["environment"]["backend"]
+
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        deactivate_cmd = conda_backend.get_deactivate_cmd()
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        deactivate_cmd = venv_backend.get_deactivate_cmd()
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        deactivate_cmd = virtualenv_backend.get_deactivate_cmd()
+    else:
+        deactivate_cmd = f"# Deactivate command for {backend} not available"
+
+    typer.secho(deactivate_cmd, fg=typer.colors.YELLOW)
+
+
 def delete(
     venv_name: str = typer.Argument(help="Name of the environment to delete (backend and registry)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")

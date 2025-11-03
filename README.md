@@ -289,6 +289,27 @@ gvit envs reset my-env
 # Reset without reinstalling dependencies
 gvit envs reset my-env --no-deps
 
+# Show activate command for current repository's environment
+gvit envs show-activate
+
+# Show activate command for a specific environment
+gvit envs show-activate --venv-name my-env
+
+# Show activate command with relative path (venv/virtualenv only)
+gvit envs show-activate --relative
+
+# Activate environment directly (recommended)
+eval "$(gvit envs show-activate)"
+
+# Show deactivate command for current repository's environment
+gvit envs show-deactivate
+
+# Show deactivate command for a specific environment
+gvit envs show-deactivate --venv-name my-env
+
+# Deactivate environment directly (recommended)
+eval "$(gvit envs show-deactivate)"
+
 # Clean up orphaned environments (repos that no longer exist)
 gvit envs prune
 
@@ -568,7 +589,7 @@ gvit/
 | **Virtualenv backend** | ✅ | Complete virtualenv integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
 | **Environment registry** | ✅ | Track environments with metadata, dependency hashes, and freeze snapshots |
-| **Environment management** | ✅ | `list`, `show`, `delete`, `prune`, `reset` commands |
+| **Environment management** | ✅ | `list`, `show`, `delete`, `prune`, `reset`, `show-activate`, `show-deactivate` commands |
 | **Orphan cleanup** | ✅ | Automatic detection and removal of orphaned environments |
 | **Dependency resolution** | ✅ | Priority-based resolution (CLI > repo > local > default) |
 | **pyproject.toml support** | ✅ | Install base + optional dependencies (extras) |
@@ -585,7 +606,6 @@ gvit/
 | Version | Status | Description |
 |---------|--------|-------------|
 | **0.6.0** | 📋 Planned | Add `checkout` command to switch branches and sync deps |
-| **0.6.0** | 📋 Planned | Shell integration (`gvit activate`) and completions |
 | **0.6.0** | 📋 Planned | `gvit sync` command for full dependency refresh |
 | **1.0.0** | 🎯 Goal | Stable release with all core features |
 
@@ -716,6 +736,15 @@ gvit envs reset my-project
 # Reset without dependencies (useful for testing clean environments)
 gvit envs reset my-project --no-deps
 
+# Activate an environment in the current shell
+eval "$(gvit envs show-activate)"
+
+# Activate a specific environment by name
+eval "$(gvit envs show-activate --venv-name my-project)"
+
+# Deactivate the current environment
+eval "$(gvit envs show-deactivate)"
+
 # Clean up all orphaned environments
 gvit envs prune
 
@@ -776,7 +805,9 @@ gvit
 │   ├── list
 │   ├── prune
 │   ├── reset
-│   └── show
+│   ├── show
+│   ├── show-activate
+│   └── show-deactivate
 ├── init
 ├── pull
 ├── setup
