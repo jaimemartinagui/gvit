@@ -40,7 +40,6 @@ Git-aware Virtual Environment Manager
 - [Configuration](#️-configuration)
 - [Architecture](#-architecture)
 - [Roadmap](#-roadmap)
-- [Example Workflows](#-example-workflows)
 - [Testing](#-testing)
 - [Contributing](#-contributing)
 - [License](#️-license)
@@ -116,7 +115,7 @@ gvit setup
 
 ## 💻 Installation
 
-⚠️ **Important:** Install `gvit` **globally**, not in a project-specific virtual environment. Since gvit manages virtual environments, it needs to be available system-wide.
+⚠️ **Important:** Install `gvit` **globally**, not in a project-specific virtual environment. Since `gvit` manages virtual environments, it needs to be available system-wide.
 
 ### Recommended: pipx (isolated global install)
 
@@ -174,7 +173,7 @@ gvit config setup --backend venv --python 3.11 --base-deps requirements.txt
 # or use conda
 gvit config setup --backend conda --python 3.12
 
-# or use virtualenv (faster, more features)
+# or use virtualenv
 gvit config setup --backend virtualenv --python 3.11
 ```
 
@@ -185,8 +184,6 @@ Basic clone with automatic environment creation:
 ```bash
 gvit clone https://github.com/user/repo.git
 ```
-
-<img src="assets/img/clone.png" alt="gvit clone example" width="400">
 
 **Advanced options:**
 
@@ -209,6 +206,8 @@ gvit clone https://github.com/user/repo.git --force
 # Verbose output
 gvit clone https://github.com/user/repo.git --verbose
 ```
+
+<img src="assets/img/clone.png" alt="gvit clone example" width="400">
 
 ### Initialize a New Project
 
@@ -285,11 +284,11 @@ gvit commit --amend
 ```
 
 **What it validates:**
-- ✅ Detects added packages not declared in dependency files
-- ✅ Detects removed packages still declared in dependency files  
-- ✅ Detects version changes not reflected in pinned versions
-- ✅ Works with `requirements.txt`, `pyproject.toml`, and custom paths
-- ✅ Shows detailed diff of package changes (added/removed/modified)
+- ✅ Detects added packages not declared in dependency files.
+- ✅ Detects removed packages still declared in dependency files.
+- ✅ Detects version changes not reflected in pinned versions.
+- ✅ Works with `requirements.txt`, `pyproject.toml`, and custom paths.
+- ✅ Shows detailed diff of package changes (added/removed/modified).
 
 ### Check Status
 
@@ -307,10 +306,10 @@ gvit status -e --target-dir path/to/repo
 ```
 
 **What it shows:**
-- 📂 **Repository Status**: Standard `git status` output
-- 🐍 **Environment Status**: Packages added/removed/modified since last tracking
-- ✅ Clean overview of both code and dependency changes
-- ⚡ Quick way to see if you need to update dependency files
+- 📂 **Repository Status**: Standard `git status` output.
+- 🐍 **Environment Status**: Packages added/removed/modified since last tracking.
+- ✅ Clean overview of both code and dependency changes.
+- ⚡ Quick way to see if you need to update dependency files.
 
 <img src="assets/img/status.png" alt="gvit status example" width="400">
 
@@ -381,7 +380,7 @@ gvit envs prune --yes
 
 ### Use Git Commands Directly
 
-`gvit` can replace `git` in your daily workflow! Any command not implemented in gvit automatically falls back to git:
+`gvit` can replace `git` in your daily workflow! Any command not implemented in `gvit` automatically falls back to `git`:
 
 ```bash
 # These work exactly like git commands
@@ -402,14 +401,14 @@ gvit push
 ```
 
 **How it works:**
-- 🔍 gvit checks if the command is implemented (clone, commit, init, pull, status, etc.)
-- ✅ If implemented: runs gvit's enhanced version
-- 🔄 If not implemented: automatically forwards to `git`
-- 🎯 Seamless experience - just replace `git` with `gvit`
+- 🔍 `gvit` checks if the command is implemented (clone, commit, init, pull, status, etc.).
+- ✅ If implemented: runs `gvit`'s enhanced version.
+- 🔄 If not implemented: automatically forwards to `git`.
+- 🎯 Seamless experience - just replace `git` with `gvit`.
 
 **Git aliases support:**
 
-`gvit` automatically resolves your git aliases and uses gvit's enhanced versions when available!
+`gvit` automatically resolves your **git aliases** and uses `gvit`'s enhanced versions when available!
 
 ```bash
 # If you have git aliases configured:
@@ -418,98 +417,114 @@ gvit push
 # git config --global alias.co checkout
 
 # These will use gvit's enhanced versions
-gvit st      # → gvit status (with environment tracking)
+gvit st -e   # → gvit status (with environment tracking)
 gvit ci -m   # → gvit commit (with validation)
 
 # This will use git directly
 gvit co main # → git checkout main
 ```
 
-- 🔗 Respects all your existing git aliases
-- 🚀 Automatically uses gvit's enhanced versions when the alias resolves to a gvit command
-- 🔄 Falls back to git for non-gvit commands
+- 🔗 Respects all your existing git aliases.
+- 🚀 Automatically uses `gvit`'s enhanced versions when the alias resolves to a gvit command.
+- 🔄 Falls back to git for other commands.
 
 ### Explore Commands
 
 ```bash
 # Show all available commands in tree structure
 gvit tree
+
+# Output
+gvit
+├── clone
+├── commit
+├── config
+│   ├── add-extra-deps
+│   ├── remove-extra-deps
+│   ├── setup
+│   └── show
+├── envs
+│   ├── delete
+│   ├── list
+│   ├── prune
+│   ├── reset
+│   ├── show
+│   ├── show-activate
+│   └── show-deactivate
+├── init
+├── pull
+├── setup
+├── status
+└── tree
 ```
 
 ---
 
 ## 🧠 How it works
 
-### Commands
+### Git related commands
 
-**`gvit clone`**: Clones repository + creates environment
-1. **Clones the repository** using standard `git clone`
-2. **Detects repository name** from URL (handles `.git` suffix correctly)
-3. Proceeds to environment setup (steps 3-7 below)
+**`gvit clone`** → Clones repository + creates environment:
+1. **Clones the repository** using standard `git clone`.
+2. **Detects repository name** from URL (handles `.git` suffix correctly).
+3. Proceeds to environment setup.
 
-**`gvit init`**: Initializes Git repository + creates environment
-1. **Initializes Git repository** using `git init`
-2. **Optionally adds remote** if `--remote-url` is provided
-3. Proceeds to environment setup (steps 3-7 below)
+**`gvit init`** → Initializes Git repository + creates environment:
+1. **Initializes Git repository** using `git init`.
+2. **Optionally adds remote** if `--remote-url` is provided.
+3. Proceeds to environment setup.
 
-**`gvit setup`**: Creates environment for existing repository
-1. **Verifies Git repository** exists in target directory
-2. **Detects remote URL** if available
-3. Proceeds to environment setup (steps 3-7 below)
+**`gvit setup`** → Creates environment for existing repository:
+1. **Verifies Git repository** exists in target directory.
+2. **Detects remote URL** if available.
+3. Proceeds to environment setup.
 
-**`gvit pull`**: Pulls changes and syncs dependencies
-1. **Finds tracked environment** for current repository
-2. **Runs `git pull`** with any extra arguments you provide
-3. **Compares dependency file hashes** (stored in registry vs. current files)
-4. **Reinstalls only changed dependencies** automatically
-5. **Updates registry** with new hashes
+**`gvit pull`** → Pulls changes and syncs dependencies:
+1. **Finds tracked environment** for current repository.
+2. **Runs `git pull`** with any extra arguments you provide.
+3. **Compares dependency file hashes** (stored in registry vs. current files).
+4. **Reinstalls only changed dependencies** automatically.
+5. **Updates registry** with new hashes.
 
-**`gvit envs reset`**: Resets an environment to clean state
-1. **Deletes the environment backend** (venv folder or conda env)
-2. **Recreates it empty** with the same Python version
-3. **Reinstalls dependencies** from registry (unless `--no-deps`)
-4. **Updates registry** with new hashes, freeze snapshot, and timestamp
-5. **Preserves registry entry** (unlike `delete` + `setup`)
+**`gvit commit`** → Validates dependencies before committing:
+1. **Finds tracked environment** for current repository.
+2. **Compares pip freeze outputs** (stored snapshot vs. current state).
+3. **Detects package changes**: added, removed, modified versions.
+4. **Validates dependency files** to ensure changes are reflected.
+5. **Shows detailed report** of discrepancies (if any).
+6. **Runs `git commit`** with any extra arguments you provide.
 
-**`gvit commit`**: Validates dependencies before committing
-1. **Finds tracked environment** for current repository
-2. **Compares pip freeze outputs** (stored snapshot vs. current state)
-3. **Detects package changes**: added, removed, modified versions
-4. **Validates dependency files** to ensure changes are reflected
-5. **Shows detailed report** of discrepancies (if any)
-6. **Runs `git commit`** with any extra arguments you provide
-
-**`gvit status`**: Shows combined repository and environment status
-1. **Displays `git status` output** for repository changes
-2. **Finds tracked environment** for current repository
-3. **Compares pip freeze outputs** (stored snapshot vs. current state)
-4. **Shows package changes**: added, removed, modified versions
-5. **Provides clean overview** of both code and dependency changes
+**`gvit status`** → Shows combined repository and environment status:
+1. **Displays `git status` output** for repository changes.
+2. **Finds tracked environment** for current repository.
+3. **Compares pip freeze outputs** (stored snapshot vs. current state).
+4. **Shows package changes**: added, removed, modified versions.
+5. **Provides clean overview** of both code and dependency changes.
 
 ### Environment Setup Process (common to all commands)
 
-3. **Creates virtual environment** using your preferred backend:
-   - **`venv`**: Python's built-in venv module (creates `.venv/` in repo)
-   - **`virtualenv`**: Enhanced virtual environments (creates `.venv/` in repo, faster than venv)
-   - **`conda`**: Conda environments (centralized management)
-4. **Resolves dependencies** with priority system:
-   - CLI arguments (highest priority)
-   - Repository config (`.gvit.toml`)
-   - Local config (`~/.config/gvit/config.toml`)
-   - Default values (lowest priority)
-5. **Installs dependencies** from:
-   - `pyproject.toml` (with optional extras support)
-   - `requirements.txt` or custom paths
-   - Multiple dependency groups (_base, dev, test, etc.)
-6. **Tracks environment in registry**:
-   - Saves environment metadata to `~/.config/gvit/envs/{env_name}.toml`
-   - Records dependency file hashes for change detection
-   - Stores complete pip freeze snapshot for validation
-   - Stores repository information (path, URL)
-7. **Validates and handles conflicts**: 
-   - Detects existing environments
-   - Offers options: rename, overwrite, or abort
-   - Auto-generates unique names if needed
+1. **Creates virtual environment** using your preferred backend:
+   - **`venv`**: Python's built-in venv module (creates `.venv/`, or the defined environment name, in repo).
+   - **`virtualenv`**: Enhanced virtual environments (creates `.venv/`, or the defined environment name, in repo).
+   - **`conda`**: Conda environments (centralized management).
+2. **Resolves dependencies** with priority system:
+   - CLI arguments (highest priority).
+   - Repository config (`.gvit.toml`).
+   - Local config (`~/.config/gvit/config.toml`).
+   - Default values (lowest priority).
+3. **Installs dependencies** from:
+   - `pyproject.toml` (with optional extras support).
+   - `requirements.txt` or custom paths.
+   - Multiple dependency groups (_base, dev, test, etc.).
+4. **Tracks environment in registry**:
+   - Saves environment metadata to `~/.config/gvit/envs/{env_name}.toml`.
+   - Records dependency file hashes for change detection.
+   - Stores complete pip freeze snapshot for validation.
+   - Stores repository information (path, URL).
+5. **Validates and handles conflicts**: 
+   - Detects existing environments.
+   - Offers options: rename, overwrite, or abort.
+   - Auto-generates unique names if needed.
 
 ---
 
@@ -547,6 +562,7 @@ Environment tracking: `~/.config/gvit/envs/{env_name}.toml`
 [environment]
 name = "my-project"
 backend = "conda"
+path = "/Users/user/miniconda3/envs/gvit"
 python = "3.11"
 created_at = "2025-01-22T20:53:01.123456"
 
@@ -597,41 +613,104 @@ _base = "pyproject.toml"
 
 ## 🧱 Architecture
 
+### Project Structure
+
 ```
 gvit/
-├── src/gvit/
-│   ├── cli.py              # CLI entry point (Typer app)
-│   ├── env_registry.py     # Environment registry management
-│   ├── commands/
-│   │   ├── _common.py      # Shared functions between commands
-│   │   ├── clone.py        # Clone command logic
-│   │   ├── init.py         # Init command logic
-│   │   ├── setup.py        # Setup command logic (existing repos)
-│   │   ├── pull.py         # Pull command with smart dependency sync
-│   │   ├── commit.py       # Commit command with dependency validation
-│   │   ├── status.py       # Status command (git + environment overview)
-│   │   ├── tree.py         # Tree command (show command structure)
-│   │   ├── config.py       # Config management commands
-│   │   └── envs.py         # Environment management commands
-│   ├── backends/
-│   │   ├── venv.py         # Venv backend implementation
-│   │   ├── virtualenv.py   # Virtualenv backend implementation
-│   │   └── conda.py        # Conda backend implementation
-│   ├── utils/
-│   │   ├── exceptions.py   # Custom exceptions
-│   │   ├── utils.py        # Helper functions
-│   │   ├── validators.py   # Input validation
-│   │   ├── globals.py      # Constants and defaults
-│   │   └── schemas.py      # Type definitions (TypedDict)
-│   └── __init__.py
-└── pyproject.toml          # Project metadata
+├── src/gvit/                       # Source code
+│   ├── cli.py                      # CLI entry point & command routing
+│   ├── env_registry.py             # Environment registry management
+│   ├── git.py                      # Git operations & alias resolution
+│   ├── commands/                   # Command implementations
+│   │   ├── clone.py                # Clone repos with auto environment setup
+│   │   ├── init.py                 # Initialize new Git repos + environments
+│   │   ├── setup.py                # Setup environments for existing repos
+│   │   ├── pull.py                 # Smart pull with dependency sync
+│   │   ├── commit.py               # Commit with dependency validation
+│   │   ├── status.py               # Git + environment status overview
+│   │   ├── tree.py                 # Visual command structure explorer
+│   │   ├── config.py               # Configuration management
+│   │   └── envs.py                 # Environment management (list, delete, etc)
+│   ├── backends/                   # Backend implementations
+│   │   ├── common.py               # Shared backend functions
+│   │   ├── venv.py                 # Python's built-in venv
+│   │   ├── virtualenv.py           # virtualenv (faster, more features)
+│   │   └── conda.py                # conda environments
+│   └── utils/                      # Utilities & helpers
+│       ├── exceptions.py           # Custom exception classes
+│       ├── globals.py              # Constants and defaults
+│       ├── schemas.py              # Type definitions (TypedDict)
+│       ├── utils.py                # Helper functions
+│       └── validators.py           # Input validation
+├── tests/                          # Test suite (49 tests, 33% coverage)
+│   ├── unit/                       # Unit tests (38 tests)
+│   │   ├── test_env_registry.py
+│   │   ├── test_backends/
+│   │   └── test_utils/
+│   ├── integration/                # Integration tests (11 tests)
+│   │   └── test_envs.py
+│   ├── fixtures/                   # Test fixtures
+│   ├── conftest.py                 # Shared pytest fixtures
+│   └── README.md                   # Complete testing guide
+├── .coveragerc                     # Coverage configuration
+├── pytest.ini                      # Pytest configuration
+├── pyproject.toml                  # Project metadata & dependencies
+└── README.md                       # This file
+```
+
+### Key Components
+
+#### Core Modules
+
+- **`cli.py`** - Entry point with Typer app, command routing, and git fallback.
+- **`env_registry.py`** - Manages environment tracking in `~/.config/gvit/envs/`.
+- **`git.py`** - Git operations, alias resolution, and git command execution.
+
+#### Commands Layer
+
+Each command is self-contained with its own logic:
+
+#### Backends Layer
+
+Abstraction for different virtual environment tools.
+
+#### Utils Layer
+
+Support utilities (configuration paths, defaults, constants, custom exceptions, etc.).
+
+### Data Flow
+
+```
+1. User runs command
+   ↓
+2. cli.py parses with Typer
+   ↓
+3. Command module executes logic
+   ↓
+4. Backend creates/manages environment
+   ↓
+5. env_registry.py tracks metadata
+   ↓
+6. Files saved to ~/.config/gvit/
+```
+
+### Configuration Hierarchy
+
+```
+CLI Arguments (highest priority)
+  ↓
+Repository Config (.gvit.toml or pyproject.toml)
+  ↓
+Local Config (~/.config/gvit/config.toml)
+  ↓
+Defaults (globals.py)
 ```
 
 ---
 
 ## 🧭 Roadmap
 
-### Current Release (v0.0.3)
+### Current Release (v0.4.0)
 
 | Feature | Status | Description |
 |---------|--------|-------------|
@@ -668,215 +747,9 @@ gvit/
 
 ---
 
-## 🧑‍💻 Example Workflows
-
-### First Time Setup
-
-```bash
-# Install gvit
-pipx install gvit
-
-# Configure defaults (use venv or conda)
-gvit config setup --backend venv --python 3.11
-
-# Add common dependency groups
-gvit config add-extra-deps dev requirements-dev.txt
-gvit config add-extra-deps test requirements-test.txt
-```
-
-### Standard Project
-
-```bash
-# Clone with base dependencies
-gvit clone https://github.com/user/project.git
-
-# Activate environment
-conda activate project
-```
-
-### Project with Extra Dependencies
-
-```bash
-# Clone and install dev dependencies
-gvit clone https://github.com/user/project.git --extra-deps dev
-
-# Or multiple groups
-gvit clone https://github.com/user/project.git --extra-deps dev,test
-
-# Activate
-conda activate project
-```
-
-### Project with pyproject.toml
-
-```bash
-# Install base dependencies from pyproject.toml
-gvit clone https://github.com/user/project.git
-
-# Install with optional dependencies defined in [project.optional-dependencies]
-gvit clone https://github.com/user/project.git --extra-deps dev,test
-```
-
-### Custom Configuration
-
-```bash
-# Override everything from CLI
-gvit clone https://github.com/user/project.git \
-  --venv-name custom-env \
-  --python 3.12 \
-  --backend conda \
-  --base-deps requirements/prod.txt \
-  --extra-deps dev:requirements/dev.txt,test:requirements/test.txt \
-  --verbose
-```
-
-### Initialize a New Project
-
-```bash
-# Create a new project from scratch
-mkdir my-new-project
-cd my-new-project
-gvit init --remote-url https://github.com/user/my-new-project.git
-
-# Now ready to work
-echo "# My Project" > README.md
-git add .
-git commit -m "Initial commit"
-git push -u origin main
-```
-
-### Setup an Existing Repository
-
-```bash
-# You already cloned a repo manually
-git clone https://github.com/user/project.git
-cd project
-
-# Now set up the environment
-gvit setup
-
-# Or with specific options
-gvit setup --python 3.12 --extra-deps dev,test
-```
-
-### Daily Workflow with Pull
-
-```bash
-# Update your project (code + dependencies)
-cd my-project
-gvit pull
-
-# If requirements.txt changed:
-# - Dependency changes detected: base
-# - Reinstalling base dependencies from requirements.txt...
-# 🎉 Repository and dependencies updated successfully!
-
-# Continue working
-conda activate my-project
-```
-
-### Managing Tracked Environments
-
-```bash
-# See all environments gvit knows about
-gvit envs list
-
-# Check environment details (shows registry file with syntax highlighting)
-gvit envs show my-project
-
-# Remove specific environment (registry + backend)
-gvit envs delete old-project
-
-# Reset an environment (recreate + reinstall dependencies from registry)
-gvit envs reset my-project
-
-# Reset without dependencies (useful for testing clean environments)
-gvit envs reset my-project --no-deps
-
-# Activate an environment in the current shell
-eval "$(gvit envs show-activate)"
-
-# Activate a specific environment by name
-eval "$(gvit envs show-activate --venv-name my-project)"
-
-# Deactivate the current environment
-eval "$(gvit envs show-deactivate)"
-
-# Clean up all orphaned environments
-gvit envs prune
-
-# See what would be cleaned without actually removing
-gvit envs prune --dry-run
-```
-
-### Fixing a Broken Environment
-
-```bash
-# Your environment is corrupted or has dependency conflicts
-cd my-project
-
-# Reset the environment (recreates it from scratch)
-gvit envs reset my-project-abc123
-
-# Output:
-# ⚠️  This will reset environment "my-project-abc123":
-#    Backend:     venv
-#    Python:      3.11
-#    Path:        /path/to/my-project/.venv
-#    Repository:  /path/to/my-project
-#
-#   Continue? [y/N]: y
-#
-# - Deleting environment backend...✅
-# - Recreating environment with Python 3.11 (this might take some time)...✅
-#
-# - Reinstalling dependencies from registry...
-#   Group "_base"...✅
-#   Group "dev"...✅
-#
-# - Updating registry with new dependency hashes...✅
-#
-# 🎉 Environment "my-project-abc123" reset successfully!
-#    Registry updated at: ~/.config/gvit/envs/my-project-abc123.toml
-
-# Environment is now clean and ready to use
-source .venv/bin/activate
-```
-
-### Explore Available Commands
-
-```bash
-gvit tree
-
-# Output:
-gvit
-├── clone
-├── commit
-├── config
-│   ├── add-extra-deps
-│   ├── remove-extra-deps
-│   ├── setup
-│   └── show
-├── envs
-│   ├── delete
-│   ├── list
-│   ├── prune
-│   ├── reset
-│   ├── show
-│   ├── show-activate
-│   └── show-deactivate
-├── init
-├── pull
-├── setup
-├── status
-└── tree
-```
-
----
-
 ## 🧪 Testing
 
-gvit has a comprehensive test suite with 49 tests and growing coverage.
+`gvit` has a comprehensive test suite with 49 tests and growing coverage.
 
 ```bash
 # Install test dependencies
@@ -897,11 +770,10 @@ open tests/htmlcov/index.html
 - ✅ Fully isolated (no system side effects)
 
 **Documentation:** See [tests/README.md](tests/README.md) for the complete testing guide including:
-- How to run and write tests
-- Coverage analysis
-- Available fixtures
-- Best practices
-- CI/CD integration
+- How to run and write tests.
+- Coverage analysis.
+- Available fixtures.
+- Best practices.
 
 ---
 

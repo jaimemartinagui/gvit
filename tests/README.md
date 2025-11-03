@@ -1,6 +1,6 @@
-# Testing Guide for gvit
+# Testing Guide for `gvit`
 
-Comprehensive guide for testing gvit - from quick start to advanced coverage analysis.
+Comprehensive guide for testing `gvit` - from quick start to advanced coverage analysis.
 
 ## 📋 Table of Contents
 
@@ -38,9 +38,9 @@ open tests/htmlcov/index.html
 
 ### Current Status
 
-- ✅ **49 tests** passing (38 unit + 11 integration)
-- ✅ **33% coverage** (target: 80%+)
-- ✅ **Fully isolated** (no system side effects)
+- ✅ **49 tests** passing (38 unit + 11 integration).
+- ✅ **33% coverage** (target: 80%+).
+- ✅ **Fully isolated** (no system side effects).
 
 ---
 
@@ -49,12 +49,12 @@ open tests/htmlcov/index.html
 ```
 tests/
 ├── unit/                       # Unit tests (fast, isolated)
-│   ├── test_env_registry.py   # EnvRegistry class tests
+│   ├── test_env_registry.py    # EnvRegistry class tests
 │   ├── test_backends/          # Backend implementations
 │   └── test_utils/
 │       └── test_utils.py       # Utility functions
 ├── integration/                # Integration tests (e2e)
-│   └── test_envs.py           # 'gvit envs' commands
+│   └── test_envs.py            # `gvit envs` commands
 ├── fixtures/                   # Test data
 ├── conftest.py                 # Shared fixtures
 ├── .coverage                   # Coverage data (generated)
@@ -66,11 +66,11 @@ tests/
 ### Test Organization
 
 **Unit Tests (38):**
-- `test_env_registry.py` - 14 tests for EnvRegistry
-- `test_utils.py` - 24 tests for utilities
+- `test_env_registry.py` - 14 tests for EnvRegistry.
+- `test_utils.py` - 24 tests for utilities.
 
 **Integration Tests (11):**
-- `test_envs.py` - Commands: list, delete, prune, show-activate, show-deactivate
+- `test_envs.py` - Commands: list, delete, prune, show-activate, show-deactivate.
 
 ---
 
@@ -125,10 +125,10 @@ pytest -m venv
 ```
 
 **Available markers:**
-- `unit` - Unit tests (fast, isolated)
-- `integration` - Integration tests (slower)
-- `slow` - Long-running tests
-- `venv`, `conda`, `virtualenv` - Backend-specific
+- `unit` - Unit tests (fast, isolated).
+- `integration` - Integration tests (slower).
+- `slow` - Long-running tests.
+- `venv`, `conda`, `virtualenv` - Backend-specific.
 
 ---
 
@@ -144,10 +144,10 @@ def test_extract_repo_name_from_url():
 ```
 
 **Unit tests should:**
-- ✅ Be fast (< 1 second each)
-- ✅ Test single function/method
-- ✅ Use mocks for external deps
-- ✅ Be completely isolated
+- ✅ Be fast (< 1 second each).
+- ✅ Test single function/method.
+- ✅ Use mocks for external deps.
+- ✅ Be completely isolated.
 
 ### Integration Test Example
 
@@ -165,20 +165,20 @@ def test_envs_list_command(temp_config_dir, temp_repo):
 ```
 
 **Integration tests should:**
-- ✅ Test complete workflows
-- ✅ Use `CliRunner` for CLI
-- ✅ Mock only external services
-- ✅ Use temp directories
+- ✅ Test complete workflows.
+- ✅ Use `CliRunner` for CLI.
+- ✅ Mock only external services.
+- ✅ Use temp directories.
 
 ### Test Isolation
 
 Every test runs in complete isolation:
-- Temporary config directories
-- Temporary git repos
-- Mocked subprocess calls
-- No side effects on system
+- Temporary config directories.
+- Temporary git repos.
+- Mocked subprocess calls.
+- No side effects on system.
 
-This is achieved by the `isolate_tests` autouse fixture in `conftest.py`.
+This is achieved by the `isolate_tests` auto-use fixture in `conftest.py`.
 
 ---
 
@@ -215,17 +215,17 @@ pytest --cov=src/gvit --cov-fail-under=80
 
 ### HTML Coverage Report Features
 
-- 📊 Overview with % per module
-- 🔍 Line-by-line highlighting (green=covered, red=not covered)
-- 🎯 Branch coverage visualization
-- 📈 Trends (if history saved)
+- 📊 Overview with % per module.
+- 🔍 Line-by-line highlighting (green=covered, red=not covered).
+- 🎯 Branch coverage visualization.
+- 📈 Trends (if history saved).
 
 ### Coverage Levels
 
-- 🔴 **< 60%** - Insufficient, risky
-- 🟡 **60-80%** - Acceptable, improvable
-- 🟢 **80-90%** - Good, professional level
-- 💎 **> 90%** - Excellent, high confidence
+- 🔴 **< 60%** - Insufficient, risky.
+- 🟡 **60-80%** - Acceptable, improvable.
+- 🟢 **80-90%** - Good, professional level.
+- 💎 **> 90%** - Excellent, high confidence.
 
 ### Interpreting Coverage
 
@@ -338,43 +338,6 @@ def test_example(mock_venv_creation, mocker):
 
 ---
 
-## 🔄 CI/CD
-
-Tests are ready for CI/CD. Example GitHub Actions workflow:
-
-```yaml
-# .github/workflows/tests.yml
-name: Tests
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11', '3.12']
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      
-      - name: Install dependencies
-        run: pip install -e ".[test]"
-      
-      - name: Run tests
-        run: pytest --cov=src/gvit --cov-report=xml
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: tests/coverage.xml
-```
-
 ### Coverage Services
 
 Compatible with:
@@ -388,29 +351,29 @@ Compatible with:
 
 ### DO:
 
-✅ **Descriptive names** - `test_load_config_from_file` not `test_1`  
-✅ **One concept per test** - Test one thing at a time  
-✅ **Use fixtures** - DRY principle for setup  
-✅ **Test edge cases** - Empty strings, None, negative numbers  
-✅ **Test error paths** - Not just happy path  
-✅ **Independent tests** - No shared state  
-✅ **Fast unit tests** - Keep under 1 second  
-✅ **Clear assertions** - Explicit expected values  
+✅ **Descriptive names** - `test_load_config_from_file` not `test_1`.  
+✅ **One concept per test** - Test one thing at a time.  
+✅ **Use fixtures** - DRY principle for setup.  
+✅ **Test edge cases** - Empty strings, None, negative numbers.  
+✅ **Test error paths** - Not just happy path.  
+✅ **Independent tests** - No shared state.  
+✅ **Fast unit tests** - Keep under 1 second.  
+✅ **Clear assertions** - Explicit expected values.  
 
 ### DON'T:
 
-❌ **Sleep in tests** - Use mocks instead  
-❌ **Test implementation** - Test behavior  
-❌ **Share state** - Each test isolated  
-❌ **Ignore failures** - Fix or remove  
-❌ **100% coverage obsession** - Quality > quantity  
+❌ **Sleep in tests** - Use mocks instead.  
+❌ **Test implementation** - Test behavior.  
+❌ **Share state** - Each test isolated.  
+❌ **Ignore failures** - Fix or remove.  
+❌ **100% coverage obsession** - Quality > quantity.  
 
 ### Coverage Tips
 
-1. **Prioritize important code** - Business logic first
-2. **Coverage ≠ quality** - Can have 100% with bad tests
-3. **Use HTML report** - Visual identification of gaps
-4. **Monitor trends** - Track coverage over time
+1. **Prioritize important code** - Business logic first.
+2. **Coverage ≠ quality** - Can have 100% with bad tests.
+3. **Use HTML report** - Visual identification of gaps.
+4. **Monitor trends** - Track coverage over time.
 
 ---
 
@@ -465,21 +428,21 @@ pytest -m "not slow"
 
 ### Areas Needing Tests
 
-1. **Backends** - venv, conda, virtualenv operations
-2. **Commands** - clone, init, setup, pull, commit, status
-3. **Git integration** - git operations and fallback
-4. **Dependency management** - install, validate, sync
-5. **Error handling** - edge cases and failures
+1. **Backends** - venv, conda, virtualenv operations.
+2. **Commands** - clone, init, setup, pull, commit, status.
+3. **Git integration** - git operations and fallback.
+4. **Dependency management** - install, validate, sync.
+5. **Error handling** - edge cases and failures.
 
 ### Adding Tests
 
-1. Identify code to test
-2. Choose unit vs integration
-3. Write test with clear name + docstring
-4. Use appropriate fixtures
-5. Assert expected behavior
-6. Run to verify passing
-7. Check coverage impact
+1. Identify code to test.
+2. Choose unit vs integration.
+3. Write test with clear name + docstring.
+4. Use appropriate fixtures.
+5. Assert expected behavior.
+6. Run to verify passing.
+7. Check coverage impact.
 
 ---
 
@@ -498,7 +461,7 @@ pytest -m "not slow"
 **Tests:** 49 passing (38 unit + 11 integration)  
 **Coverage:** 33% (target: 80%+)  
 **Status:** ✅ Fully functional  
-**Last Updated:** 2025-01-03
+**Last Updated:** 2025-11-03
 
 ---
 
