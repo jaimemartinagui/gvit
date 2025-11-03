@@ -15,6 +15,10 @@ class VenvConfig(TypedDict):
     name: str
 
 
+class VirtualenvConfig(TypedDict):
+    name: str
+
+
 class GvitLocalConfig(TypedDict):
     backend: NotRequired[str]
     python: NotRequired[str]
@@ -29,6 +33,7 @@ class DepsLocalConfig(TypedDict):
 class BackendsConfig(TypedDict):
     conda: NotRequired[CondaConfig]
     venv: NotRequired[VenvConfig]
+    virtualenv: NotRequired[VirtualenvConfig]
 
 
 class LocalConfig(TypedDict):

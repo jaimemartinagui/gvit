@@ -222,7 +222,9 @@ def _get_updated_local_config(
         config["backends"] = existing_config.get("backends", {})
         if conda_path:
             config["backends"]["conda"] = {"path": conda_path}
-        if venv_name:
+        elif venv_name and backend == "venv":
             config["backends"]["venv"] = {"name": venv_name}
+        elif venv_name and backend == "virtualenv":
+            config["backends"]["virtualenv"] = {"name": venv_name}
 
     return cast(LocalConfig, config)
