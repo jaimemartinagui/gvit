@@ -42,13 +42,6 @@ The README includes these badges to show project status at a glance:
 - **Update manually:** After running coverage
 - **Target:** 80%+
 
-### 6. Code Style
-```markdown
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-```
-- **Shows:** Code formatting standard
-- **Static:** Only update if changing formatter
-
 ## 🔄 When to Update
 
 | Badge | Update When | How Often |
@@ -58,7 +51,6 @@ The README includes these badges to show project status at a glance:
 | License | Change LICENSE file | Almost never |
 | Tests | Add/remove tests | Each PR |
 | Coverage | Coverage changes | Each PR |
-| Code style | Change formatter | Almost never |
 
 ## 🚀 Future Badges (When Ready)
 
@@ -146,10 +138,8 @@ git commit -m "docs: update badges"
 
 ## 🎨 Badge Positioning
 
-Badges are in `<div align="center">` for centered layout:
-
 ```markdown
-<div align="center">
+<div>
 
 **Title**
 
@@ -169,5 +159,5 @@ Description
 
 ---
 
-**Last Updated:** 2025-01-03  
-**Current Badges:** 6 (3 auto, 3 manual)
+**Last Updated:** 2025-11-03  
+**Current Badges:** 5 (3 auto, 2 manual)
