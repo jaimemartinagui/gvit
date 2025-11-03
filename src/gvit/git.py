@@ -3,7 +3,6 @@ Module with the Git class.
 """
 
 import sys
-
 import subprocess
 from pathlib import Path
 

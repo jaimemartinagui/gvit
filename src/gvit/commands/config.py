@@ -3,7 +3,6 @@ Module for the "gvit config" group of commands.
 """
 
 import time
-
 from typing import cast
 
 import typer
