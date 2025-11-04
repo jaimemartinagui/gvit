@@ -7,7 +7,14 @@ from typing import cast
 
 import typer
 
-from gvit.utils.globals import SUPPORTED_BACKENDS, FAKE_SLEEP_TIME, LOCAL_CONFIG_FILE
+from gvit.utils.globals import (
+    SUPPORTED_BACKENDS,
+    FAKE_SLEEP_TIME,
+    LOCAL_CONFIG_FILE,
+    DEFAULT_LOG_ENABLED,
+    DEFAULT_MAX_LOG_ENTRIES,
+    DEFAULT_LOG_IGNORED_COMMANDS
+)
 from gvit.utils.utils import (
     ensure_local_config_dir,
     load_local_config,
@@ -15,7 +22,6 @@ from gvit.utils.utils import (
     get_backend,
     get_venv_name,
     get_python,
-    get_base_deps
 )
 from gvit.utils.validators import validate_backend, validate_python
 from gvit.utils.schemas import LocalConfig
@@ -27,6 +33,7 @@ def setup(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Default Python version."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Default base dependencies path (relative to repository root path)."),
+    logging: bool = typer.Option(None, "--logging", "-l", help="Activate logging.")
 ) -> None:
     """
     Configure gvit and generate ~/.config/gvit/config.toml configuration file.
@@ -68,18 +75,23 @@ def setup(
         ).strip()
     validate_python(python)
 
-    if base_deps is None:
-        base_deps = typer.prompt(
-            f"- Select default dependencies path",
-            default=get_base_deps(config),
-        ).strip()
+    if logging is None:
+        logging = typer.confirm("- Activate logging?", default=DEFAULT_LOG_ENABLED)
 
-    config = _get_updated_local_config(backend, python, base_deps, conda_path, venv_name)
+    config = _get_updated_local_config(
+        backend=backend,
+        python=python,
+        base_deps=base_deps,
+        conda_path=conda_path,
+        venv_name=venv_name,
+        logging=logging
+    )
 
     typer.echo("\nSaving configuration...", nl=False)
     save_local_config(config)
     time.sleep(FAKE_SLEEP_TIME)
     typer.echo("✅")
+    typer.secho("For complete logging setup check `gvit logs config`.", dim=True)
 
 
 def add_extra_deps(
@@ -203,7 +215,7 @@ def show() -> None:
 
 
 def _get_updated_local_config(
-    backend: str, python: str, base_deps: str, conda_path: str | None, venv_name: str | None
+    backend: str, python: str, base_deps: str, conda_path: str | None, venv_name: str | None, logging: bool
 ) -> LocalConfig:
     """Build the local configuration file, preserving existing extra deps."""
     existing_config = load_local_config()
@@ -216,6 +228,11 @@ def _get_updated_local_config(
             "_base": base_deps,
             # Preserve existing extra deps (dev, test, etc.)
             **{k: v for k, v in existing_config.get("deps", {}).items() if k != "_base"}
+        },
+        "logging": {
+            "active": logging,
+            "max_entries": existing_config.get("logging", {}).get("max_entries", DEFAULT_MAX_LOG_ENTRIES),
+            "ignored": existing_config.get("logging", {}).get("ignored", DEFAULT_LOG_IGNORED_COMMANDS)
         }
     }
     if conda_path or venv_name:

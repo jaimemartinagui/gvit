@@ -36,11 +36,18 @@ class BackendsConfig(TypedDict):
     virtualenv: NotRequired[VirtualenvConfig]
 
 
+class LoggingConfig(TypedDict):
+    enabled: NotRequired[bool]
+    max_entries: NotRequired[int]
+    ignored: NotRequired[list[str]]
+
+
 class LocalConfig(TypedDict):
     """Schema for the local configuration of gvit (~/.config/gvit/config.toml)."""
     gvit: NotRequired[GvitLocalConfig]
     deps: NotRequired[DepsLocalConfig]
     backends: NotRequired[BackendsConfig]
+    logging: NotRequired[LoggingConfig]
 
 # ==============================================================
 
