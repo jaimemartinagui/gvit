@@ -8,6 +8,8 @@ from pathlib import Path
 
 import typer
 
+from gvit.error_handler import exit_with_error
+
 
 class Git:
     """Class with the methods to run Git commands."""
@@ -52,8 +54,9 @@ class Git:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Git clone failed:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Git clone failed:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def pull(self, repo_dir: str, extra_args: list[str] | None = None, verbose: bool = False) -> None:
         """Run git pull command."""
@@ -69,8 +72,9 @@ class Git:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Git pull failed:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Git pull failed:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def commit(self, repo_dir: str, extra_args: list[str] | None = None, verbose: bool = False) -> None:
         """Run git commit command."""
@@ -89,8 +93,9 @@ class Git:
                 typer.echo(result.stderr)
         except subprocess.CalledProcessError as e:
             # Git commit can fail for valid reasons (nothing to commit, etc.)
-            typer.secho(f"❗ Git commit failed:\n{e.stdout}{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=e.returncode)
+            error_msg = f"❗ Git commit failed:\n{e.stdout}{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg, code=e.returncode)
 
     def init(self, target_dir: str, extra_args: list[str] | None = None, verbose: bool = False) -> None:
         """Function to initialize the Git repository."""
@@ -106,8 +111,9 @@ class Git:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Git init failed:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Git init failed:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def status(self, repo_path: Path, extra_args: list[str] | None = None) -> None:
         """Show git status output with color highlighting."""
@@ -193,8 +199,9 @@ class Git:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Failed to add remote:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Failed to add remote:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def get_remote_url(self, repo_dir: str) -> str:
         """Get the remote URL of the repository if it exists."""

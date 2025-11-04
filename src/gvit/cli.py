@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import typer
-
 from gvit.commands.pull import pull
 from gvit.commands.clone import clone
 from gvit.commands.commit import commit
@@ -24,6 +23,7 @@ from gvit.utils.globals import ASCII_LOGO
 from gvit.git import Git
 from gvit.logger import GvitLogger
 from gvit.env_registry import EnvRegistry
+from gvit.error_handler import clear_error_message, get_error_message
 
 
 app = typer.Typer(
@@ -91,6 +91,7 @@ def gvit_cli() -> None:
     3. Execute gvit command via typer.
     4. Log command execution (time, exit code, etc.).
     """
+    clear_error_message()
     start_time = time.time()
     exit_code = 0
     error_msg = ""
@@ -105,6 +106,12 @@ def gvit_cli() -> None:
     except SystemExit as e:
         # Capture exit code and re-raise to maintain normal exit behavior
         exit_code = int(e.code) if e.code is not None else 0
+        # Only capture error if exit code is not 0
+        if exit_code != 0:
+            # Try to get error from error_handler first
+            stored_error = get_error_message()
+            if stored_error:
+                error_msg = stored_error
         raise
     except Exception as e:
         # Capture unexpected errors with exit code 1, then re-raise
@@ -121,7 +128,7 @@ def gvit_cli() -> None:
                 duration_ms=duration_ms,
                 error=error_msg,
             )
-
+        clear_error_message()
 
 def _parse_command_from_argv() -> dict | None:
     """
@@ -144,7 +151,6 @@ def _parse_command_from_argv() -> dict | None:
 
     command = sys.argv[1]
 
-    # Do not log help/version flags
     if command in ["-h", "--help", "-V", "--version"] or command.startswith("-"):
         return None
 
@@ -179,7 +185,8 @@ def _parse_command_from_argv() -> dict | None:
 def _log_command(command: str, exit_code: int, duration_ms: int, error: str = "") -> None:
     """Log command execution to the logger."""
     group_commands = ["config", "envs", "logs"]
-    no_env_commands = ["config", "envs.list", "envs.prune", "logs", "tree"]
+    no_env_commands = ["config", "logs", "tree"]
+    no_env_subcommands = ["config", "envs.list", "envs.prune", "logs", "tree"]
 
     if len(sys.argv) > 2 and command in group_commands:
         subcommand = sys.argv[2]
@@ -188,7 +195,10 @@ def _log_command(command: str, exit_code: int, duration_ms: int, error: str = ""
         command_short = command
 
     command_full = f'gvit {" ".join(sys.argv[1:])}'
-    environment = "" if command_short in no_env_commands else _detect_environment_from_argv()
+    environment = (
+        "" if command not in no_env_commands and command_short in no_env_subcommands
+        else _detect_environment_from_argv()
+    )
 
     logger = GvitLogger()
     logger.log_command(
@@ -218,39 +228,35 @@ def _detect_environment_from_argv() -> str:
     for i, arg in enumerate(sys.argv):
         if arg in ["--venv-name", "-n"] and i + 1 < len(sys.argv):
             return sys.argv[i + 1]
-    
+
     # For commands like "envs delete <name>" or "envs show <name>", check positional arg
     if len(sys.argv) >= 3:
         command = sys.argv[1]
         subcommand = sys.argv[2]
-        
+
         # Commands that take env name as positional argument
         env_commands = ["delete", "show", "reset", "show-activate", "show-deactivate"]
-        
+
         if command == "envs" and subcommand in env_commands and len(sys.argv) >= 4:
             # Third argument is the env name (e.g., "gvit envs delete my-env")
             potential_env = sys.argv[3]
             if not potential_env.startswith("-"):
                 return potential_env
-    
+
     # Try to find --target-dir or -t flag
     target_dir = None
     for i, arg in enumerate(sys.argv):
         if arg in ["--target-dir", "-t"] and i + 1 < len(sys.argv):
             target_dir = Path(sys.argv[i + 1]).resolve()
             break
-    
-    # If no target-dir, use current working directory
-    if not target_dir:
-        target_dir = Path(os.getcwd()).resolve()
-    
-    # Lookup in registry by repository path
+
+    target_dir = target_dir or Path(os.getcwd()).resolve()
     registry = EnvRegistry()
     for env in registry.get_environments():
         repo_path = Path(env["repository"]["path"]).resolve()
         if repo_path == target_dir:
             return env["environment"]["name"]
-    
+
     return ""
 
 

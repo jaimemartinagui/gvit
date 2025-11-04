@@ -14,6 +14,7 @@ from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
 from gvit.backends.virtualenv import VirtualenvBackend
 from gvit.backends.common import create_venv, delete_venv, install_dependencies
+from gvit.error_handler import exit_with_error
 
 
 def list_() -> None:
@@ -168,8 +169,9 @@ def delete(
     if env_registry.delete_environment_registry(venv_name):
         typer.echo("✅")
     else:
-        typer.secho(f'❗ Registry deletion failed.', fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        error_msg = f"❗ Registry deletion failed."
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
 
 
 def prune(
@@ -197,8 +199,9 @@ def prune(
         return None
 
     if not yes and not typer.confirm("\n  Do you want to delete these environments?", default=False):
-        typer.secho("  Aborted!", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        error_msg = "  Aborted!"
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
 
     errors_registry = []
     errors_backend = []

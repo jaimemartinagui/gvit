@@ -46,9 +46,10 @@ def stats() -> None:
     """Show logs statistics."""
     gvit_logger = GvitLogger()
     stats = gvit_logger.get_stats()
+    file_bytes = stats['file_size_bytes']
     console.print("[bold]📂 Logs Statistics[/bold]\n")
     console.print(f"- [green]Total entries:[/green] {stats['total_entries']}")
-    console.print(f"- [green]File size:[/green] {stats['file_size_bytes']} bytes")
+    console.print(f"- [green]File size:[/green] {file_bytes} bytes ({round(file_bytes / 1_000_000, 2)} MB)")
     console.print(f"- [dim]Newest entry:[/dim] {stats['newest_entry']}")
     console.print(f"- [dim]Oldest entry:[/dim] {stats['oldest_entry']}")
 
@@ -96,6 +97,7 @@ def config(
 def show(
     limit: int = typer.Option(DEFAULT_LOG_SHOW_LIMIT, "--limit", "-l", help="Number of entries to show."),
     venv_name: str = typer.Option(None, "--venv-name", "-n", help="Filter logs by environment name."),
+    status: str = typer.Option(None, "--status", "-s", help="Filter logs by status (exit code). Comma separated values."),
     errors: bool = typer.Option(False, "--errors", "-e", is_flag=True, help="Show error messages."),
     full_command: bool = typer.Option(False, "--full-command", "-f", is_flag=True, help="Show full command."),
 ) -> None:
@@ -126,6 +128,12 @@ def show(
             console.print(f"[yellow]⚠️  No logs found for environment: {venv_name}[/yellow]")
             return None
 
+    if status:
+        logs = [log for log in logs if log["exit_code"] in status.split(",")]
+        if not logs:
+            console.print(f"[yellow]⚠️  No logs found for status: {status}[/yellow]")
+            return None
+
     table = Table(show_header=True, header_style="bold cyan", show_lines=True)
     table.add_column("n", style="green")
     table.add_column("Timestamp", style="green")
@@ -140,7 +148,7 @@ def show(
 
     for i, entry in enumerate(logs):
         duration = f"{entry['duration_ms']}ms" if entry['duration_ms'] else "-"
-        status = "✅" if entry['exit_code'] == "0" else "❌"
+        status_ = "✅" if entry['exit_code'] == "0" else f"{entry['exit_code']} ❌"
         env = entry.get("environment", "") or "-"
         error = entry.get("error", "") or "-"
         row_data = [
@@ -149,7 +157,7 @@ def show(
             entry["command_short"],
             env,
             duration,
-            status,
+            status_,
         ]
         if full_command:
             row_data.append(entry["command_full"])

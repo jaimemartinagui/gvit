@@ -13,6 +13,8 @@ import json
 
 import typer
 
+from gvit.error_handler import exit_with_error
+
 
 class CondaBackend:
     """Class for the operations with the Conda backend."""
@@ -72,8 +74,9 @@ class CondaBackend:
                         typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
                         self.delete_venv(venv_name, verbose)
                     case _:
-                        typer.secho("  Aborted!", fg=typer.colors.RED)
-                        raise typer.Exit(code=1)
+                        error_msg = "  Aborted!"
+                        typer.secho(error_msg, fg=typer.colors.RED)
+                        exit_with_error(error_msg)
 
         self._create_venv(venv_name, python, verbose)
 
@@ -147,8 +150,9 @@ class CondaBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Failed to delete conda environment:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Failed to delete conda environment:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def get_activate_cmd(self, venv_name: str) -> str:
         """Method to get the command to activate the environment."""
@@ -259,5 +263,6 @@ class CondaBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Failed to create conda environment:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Failed to create conda environment:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)

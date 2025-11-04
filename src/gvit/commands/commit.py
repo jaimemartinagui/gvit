@@ -13,6 +13,7 @@ from gvit.utils.utils import load_local_config, get_verbose
 from gvit.utils.validators import validate_directory, validate_git_repo
 from gvit.backends.common import get_freeze, get_freeze_hash, get_freeze_diff, show_freeze_diff
 from gvit.git import Git
+from gvit.error_handler import exit_with_error
 
 
 def commit(
@@ -136,8 +137,9 @@ def _ask_user() -> None:
         default=2
     )
     if choice != 1:
-        typer.secho("❗ Commit aborted.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        error_msg = "❗ Commit aborted."
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
 
 
 # def _validate_deps_files(

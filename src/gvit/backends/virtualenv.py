@@ -12,6 +12,8 @@ import hashlib
 
 import typer
 
+from gvit.error_handler import exit_with_error
+
 
 class VirtualenvBackend:
     """Class for operations with the virtualenv backend."""
@@ -37,8 +39,9 @@ class VirtualenvBackend:
                     typer.echo(f'  Overwriting environment "{venv_name}"...', nl=False)
                     self.delete_venv(venv_name, repo_path)
                 else:
-                    typer.secho("  Aborted!", fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
+                    error_msg = "  Aborted!"
+                    typer.secho(error_msg, fg=typer.colors.RED)
+                    exit_with_error(error_msg)
 
         self._create_venv(str(repo_path / venv_name), python, verbose)
         self._ensure_gitignore(venv_name, repo_path)
@@ -133,8 +136,9 @@ class VirtualenvBackend:
             if verbose:
                 typer.echo(f"Deleted virtualenv directory: {venv_path}")
         except Exception as e:
-            typer.secho(f"❗ Failed to delete virtualenv directory: {e}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Failed to delete virtualenv directory: {e}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def get_activate_cmd(self, venv_path: str, relative: bool = True) -> str:
         """Get the command to activate the virtual environment."""
@@ -191,8 +195,9 @@ class VirtualenvBackend:
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
-            typer.secho(f"❗ Failed to create virtualenv:\n{e.stderr}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            error_msg = f"❗ Failed to create virtualenv:\n{e.stderr}"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
 
     def _get_python_cmd(self, python_version: str) -> str:
         """
