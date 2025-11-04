@@ -13,6 +13,7 @@ LOGS_DIR = LOCAL_CONFIG_DIR / "logs"
 LOG_FILE = LOGS_DIR / "commands.csv"
 REPO_CONFIG_FILE = ".gvit.toml"
 FAKE_SLEEP_TIME = 0.75
+MIN_PYTHON_VERSION = "3.10"
 
 DEFAULT_BACKEND = "venv"
 DEFAULT_VENV_NAME = ".venv"
@@ -38,17 +39,7 @@ DEFAULT_LOG_IGNORED_COMMANDS = [
 SUPPORTED_BACKENDS = [
     "venv",
     "conda",
-    "virtualenv",
-    # "pyenv",
-    # "pipenv"
-]
-
-SUPPORTED_PYTHONS = [
-    "3.10",
-    "3.11",
-    "3.12",
-    "3.13",
-    "3.14",
+    "virtualenv"
 ]
 
 ASCII_LOGO = r"""
