@@ -49,8 +49,7 @@ def clone(
 
     # 2. Clone repo
     target_dir = target_dir or extract_repo_name_from_url(repo_url)
-    git = Git()
-    git.clone(repo_url, target_dir, ctx.args, verbose)
+    Git().clone(repo_url, target_dir, ctx.args, verbose)
 
     # 3. Load repo config
     repo_config = load_repo_config(target_dir)

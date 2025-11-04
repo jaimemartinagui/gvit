@@ -60,8 +60,7 @@ def pull(
 
     # 5. Run git pull
     typer.echo("\n- Running git pull...", nl=False)
-    git = Git()
-    git.pull(str(target_dir_), ctx.args, verbose)
+    Git().pull(str(target_dir_), ctx.args, verbose)
 
     # 6. Skip dependency check if --no-deps
     if no_deps:

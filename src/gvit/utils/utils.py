@@ -7,6 +7,8 @@ import importlib.metadata
 from pathlib import Path
 
 import toml
+import typer
+from click import Group
 
 from gvit.utils.globals import (
     LOCAL_CONFIG_DIR,
@@ -19,6 +21,12 @@ from gvit.utils.globals import (
     DEFAULT_VERBOSE
 )
 from gvit.utils.schemas import LocalConfig, RepoConfig
+
+
+def get_app_commands(app: typer.Typer) -> set:
+    """Function to get the commands registered in the provided Typer app."""
+    click_app = typer.main.get_command(app)
+    return set(click_app.commands.keys()) if isinstance(click_app, Group) else set()
 
 
 def get_version() -> str:

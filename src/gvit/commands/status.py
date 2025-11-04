@@ -50,8 +50,7 @@ def status(
     typer.secho("  📂 Repository Status", fg=typer.colors.CYAN, bold=True)
     typer.secho("═══════════════════════════════════════════════════════════\n", fg=typer.colors.CYAN, bold=True)
 
-    git = Git()
-    git.status(target_dir_, ctx.args)
+    Git().status(target_dir_, ctx.args)
 
     if not environment:
         return None

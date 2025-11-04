@@ -12,7 +12,7 @@ from gvit.utils.globals import (
     FAKE_SLEEP_TIME,
     LOCAL_CONFIG_FILE,
     DEFAULT_LOG_ENABLED,
-    DEFAULT_MAX_LOG_ENTRIES,
+    DEFAULT_LOG_MAX_ENTRIES,
     DEFAULT_LOG_IGNORED_COMMANDS
 )
 from gvit.utils.utils import (
@@ -33,7 +33,7 @@ def setup(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Default Python version."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Default base dependencies path (relative to repository root path)."),
-    logging: bool = typer.Option(None, "--logging", "-l", help="Activate logging.")
+    logging: bool = typer.Option(None, "--logging", "-l", help="Enable logging.")
 ) -> None:
     """
     Configure gvit and generate ~/.config/gvit/config.toml configuration file.
@@ -230,8 +230,8 @@ def _get_updated_local_config(
             **{k: v for k, v in existing_config.get("deps", {}).items() if k != "_base"}
         },
         "logging": {
-            "active": logging,
-            "max_entries": existing_config.get("logging", {}).get("max_entries", DEFAULT_MAX_LOG_ENTRIES),
+            "enabled": logging,
+            "max_entries": existing_config.get("logging", {}).get("max_entries", DEFAULT_LOG_MAX_ENTRIES),
             "ignored": existing_config.get("logging", {}).get("ignored", DEFAULT_LOG_IGNORED_COMMANDS)
         }
     }

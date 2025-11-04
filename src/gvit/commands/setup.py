@@ -79,14 +79,13 @@ def setup(
         )
 
     # 7. Save environment info to registry
-    git = Git()
     env_registry = EnvRegistry()
     env_registry.save_venv_info(
         registry_name=registry_name,
         venv_name=venv_name,
         venv_path=venv_path,
         repo_path=str(target_dir_),
-        repo_url=git.get_remote_url(str(target_dir_)),
+        repo_url=Git().get_remote_url(str(target_dir_)),
         backend=backend,
         python=python,
         base_deps=resolved_base_deps,
