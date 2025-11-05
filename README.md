@@ -395,7 +395,7 @@ gvit envs prune --yes
 **Interactive Environment Management**
 
 ```bash
-# open an interactive menu to manage your environments
+# Open an interactive menu to manage your environments
 gvit envs manage
 ```
 
@@ -528,6 +528,7 @@ gvit
 ├── envs
 │   ├── delete
 │   ├── list
+│   ├── manage
 │   ├── prune
 │   ├── reset
 │   ├── show
