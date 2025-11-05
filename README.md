@@ -115,6 +115,7 @@ gvit setup
 * 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git.
 * 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`).
 * 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes.
+* 👉 **Interactive** environment management.
 * 📊 **Command logging**: Automatic tracking of all command executions with analytics and error capture.
 * 🧘 **Cleans orphaned environments** automatically with `prune` command.
 * 🌳 **Visual command tree** to explore available commands.
@@ -389,6 +390,16 @@ gvit envs prune --yes
 ```
 
 <img src="assets/img/prune.png" alt="gvit prune example" width="400">
+
+
+**Interactive Environment Management**
+
+```bash
+# open an interactive menu to manage your environments
+gvit envs manage
+```
+
+![gvit envs manage example](assets/gif/envs-manage.gif)
 
 ### Logs Management
 

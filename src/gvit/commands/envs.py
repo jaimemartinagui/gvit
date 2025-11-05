@@ -21,7 +21,6 @@ from gvit.utils.validators import validate_directory
 from gvit.error_handler import exit_with_error
 from gvit.commands.logs import show as show_logs
 
-from questionary import Style
 
 def manage() -> None:
     """
@@ -40,7 +39,7 @@ def manage() -> None:
         typer.secho("⚠️  No environments in registry.", fg=typer.colors.YELLOW)
         return None
 
-    custom_style = Style([
+    custom_style = questionary.Style([
         ("qmark", "fg:#00ffaa bold"),
         ("question", "bold"),
         ("answer", "fg:#ffcc00 bold"),
@@ -120,13 +119,6 @@ def manage() -> None:
             exit_with_error(error_msg)
         typer.echo()
         delete(venv_name, verbose=False)
-
-
-        # if questionary.confirm(
-        #     f"Delete environment '{venv_name}' (backend + registry)?",
-        #     default=False
-        # ).ask():
-        #     delete(venv_name, verbose=False)
 
 
 def list_() -> None:
