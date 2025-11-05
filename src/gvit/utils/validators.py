@@ -56,7 +56,7 @@ def validate_python(python: str) -> None:
 def validate_directory(directory: Path) -> None:
     """Function to validate the provided directory."""
     if not directory.exists():
-        error_msg = f'Directory "{directory}" does not exist.'
+        error_msg = f'❗ Directory "{directory}" does not exist.'
         typer.secho(error_msg, fg=typer.colors.RED)
         exit_with_error(error_msg)
 

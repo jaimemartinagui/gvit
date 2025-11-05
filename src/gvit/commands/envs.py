@@ -2,19 +2,131 @@
 Module for the "gvit envs" group of commands.
 """
 
+import sys
+import os
+import subprocess
+import shutil
 from pathlib import Path
 
 import toml
 import typer
+import questionary
+import pyperclip
 
 from gvit.env_registry import EnvRegistry
-from gvit.utils.globals import ENVS_DIR
+from gvit.utils.globals import ENVS_DIR, DEFAULT_LOG_SHOW_LIMIT
 from gvit.utils.utils import load_local_config, load_repo_config
-from gvit.backends.conda import CondaBackend
-from gvit.backends.venv import VenvBackend
-from gvit.backends.virtualenv import VirtualenvBackend
-from gvit.backends.common import create_venv, delete_venv, install_dependencies
+from gvit.backends.common import create_venv, delete_venv, install_dependencies, get_activate_cmd, get_deactivate_cmd
+from gvit.utils.validators import validate_directory
 from gvit.error_handler import exit_with_error
+from gvit.commands.logs import show as show_logs
+
+from questionary import Style
+
+def manage() -> None:
+    """
+    Interactive environment management.
+    
+    Select an environment and perform actions on it:
+    - Show details
+    - Open repository (VSCode, editor, terminal)
+    - Reset environment
+    - Delete environment
+    """    
+    env_registry = EnvRegistry()
+    envs = env_registry.get_environments()
+
+    if not envs:
+        typer.secho("⚠️  No environments in registry.", fg=typer.colors.YELLOW)
+        return None
+
+    custom_style = Style([
+        ("qmark", "fg:#00ffaa bold"),
+        ("question", "bold"),
+        ("answer", "fg:#ffcc00 bold"),
+        ("pointer", "fg:#00ffaa bold"),
+    ])
+
+    env_choices = [
+        f"{env['environment']['name']:30} [{env['environment']['backend']}] - {env['repository']['path']}"
+        for env in envs
+    ]
+
+    selected = questionary.select(
+        "Select environment:",
+        choices=env_choices + ["❌ Exit"],
+        style=custom_style
+    ).ask()
+
+    if selected == "❌ Exit" or selected is None:
+        return None
+
+    env = [env for env in envs if env["environment"]["name"] == selected.split()[0]][0]
+    venv_name = env["environment"]["name"]
+    repo_path = Path(env["repository"]["path"])
+    backend = env["environment"]["backend"]
+    venv_path = env["environment"]["path"]
+
+    actions = {
+        "show": "📊 Show details",
+        "logs": "📂 Check logs",
+        "reveal": "🔍 Reveal",
+        "open_editor": "✏️  Open in default editor",
+        "copy": "📎 Copy navigate and activate command",
+        "reset": "🔄 Reset environment",
+        "delete": "❗ Delete environment",
+        "exit": "❌ Exit"
+    }
+
+    action = questionary.select(
+        f'What do you want to do with "{venv_name}"?',
+        choices=list(actions.values()),
+        style=custom_style
+    ).ask()
+
+    if action is None or action == actions["exit"]:
+        return None
+
+    if action == actions["show"]:
+        typer.echo()
+        show(venv_name)
+    if action == actions["logs"]:
+        typer.echo()
+        show_logs(
+            limit=DEFAULT_LOG_SHOW_LIMIT,
+            venv_name=venv_name,
+            status=None,
+            errors=True,
+            full_command=True
+        )
+    elif action == actions["reveal"]:
+        _reveal(repo_path)
+    elif action == actions["open_editor"]:
+        _open_editor(repo_path)
+    elif action == actions["copy"]:
+        activate_cmd = get_activate_cmd(backend, venv_name, Path(venv_path)) or ""
+        pyperclip.copy(f"cd {repo_path} && {activate_cmd}")    
+    elif action == actions["reset"]:
+        if not typer.confirm(f'  Do you want to reset environment "{venv_name}"?', default=False):
+            error_msg = "  Aborted!"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
+        typer.echo()
+        reset(venv_name, no_deps=False, yes=True, verbose=False)
+    elif action == actions["delete"]:
+        if not typer.confirm(f'  Do you want to delete environment "{venv_name}"?', default=False):
+            error_msg = "  Aborted!"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
+        typer.echo()
+        delete(venv_name, verbose=False)
+
+
+        # if questionary.confirm(
+        #     f"Delete environment '{venv_name}' (backend + registry)?",
+        #     default=False
+        # ).ask():
+        #     delete(venv_name, verbose=False)
 
 
 def list_() -> None:
@@ -33,19 +145,7 @@ def list_() -> None:
         python = env["environment"]["python"]
         repo_path = env["repository"]["path"]
         env_registry_file = ENVS_DIR / f"{venv_name}.toml"
-
-        if backend == "conda":
-            conda_backend = CondaBackend()
-            activate_cmd = conda_backend.get_activate_cmd(venv_name)
-        elif backend == "venv":
-            venv_backend = VenvBackend()
-            activate_cmd = venv_backend.get_activate_cmd(venv_path)
-        elif backend == "virtualenv":
-            virtualenv_backend = VirtualenvBackend()
-            activate_cmd = virtualenv_backend.get_activate_cmd(venv_path)
-        else:
-            activate_cmd = f"# Activate command for {backend} not available"
-
+        activate_cmd = get_activate_cmd(backend, venv_name, Path(venv_path)) or f"# Activate command for {backend} not available"
         typer.secho(f"\n  • {venv_name}", fg=typer.colors.CYAN, bold=True)
         typer.echo(f"    Backend:       {backend}")
         typer.echo(f"    Python:        {python}")
@@ -86,17 +186,10 @@ def show_activate(
     venv_path = env["environment"]["path"]
     venv_name = env["environment"]["name"]
 
-    if backend == "conda":
-        conda_backend = CondaBackend()
-        activate_cmd = conda_backend.get_activate_cmd(venv_name)
-    elif backend == "venv":
-        venv_backend = VenvBackend()
-        activate_cmd = venv_backend.get_activate_cmd(venv_path, relative)
-    elif backend == "virtualenv":
-        virtualenv_backend = VirtualenvBackend()
-        activate_cmd = virtualenv_backend.get_activate_cmd(venv_path, relative)
-    else:
-        activate_cmd = f"# Activate command for {backend} not available"
+    activate_cmd = (
+        get_activate_cmd(backend, venv_name, Path(venv_path), relative)
+        or f"# Activate command for {backend} not available"
+    )
 
     typer.secho(activate_cmd, fg=typer.colors.YELLOW)
 
@@ -128,23 +221,14 @@ def show_deactivate(
 
     backend = env["environment"]["backend"]
 
-    if backend == "conda":
-        conda_backend = CondaBackend()
-        deactivate_cmd = conda_backend.get_deactivate_cmd()
-    elif backend == "venv":
-        venv_backend = VenvBackend()
-        deactivate_cmd = venv_backend.get_deactivate_cmd()
-    elif backend == "virtualenv":
-        virtualenv_backend = VirtualenvBackend()
-        deactivate_cmd = virtualenv_backend.get_deactivate_cmd()
-    else:
-        deactivate_cmd = f"# Deactivate command for {backend} not available"
+    deactivate_cmd = get_deactivate_cmd(backend) or f"# Deactivate command for {backend} not available"
 
     typer.secho(deactivate_cmd, fg=typer.colors.YELLOW)
 
 
 def delete(
     venv_name: str = typer.Argument(help="Name of the environment to delete (backend and registry)."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Remove the environment without confirmation."),
     verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")
 ) -> None:
     """
@@ -157,6 +241,14 @@ def delete(
         typer.secho(f'⚠️  Environment "{venv_name}" not found.', fg=typer.colors.YELLOW)
         return None
 
+    if not yes and not typer.confirm(f'  Do you want to delete environment "{venv_name}"?', default=False):
+        error_msg = "  Aborted!"
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
+
+    if not yes:
+        typer.echo()
+
     delete_venv(
         backend=venv_info["environment"]["backend"],
         venv_name=venv_name,
@@ -165,7 +257,7 @@ def delete(
         verbose=verbose
     )
 
-    typer.echo(f'- Removing environment "{venv_name}" registry...', nl=False)
+    typer.echo(f'\n- Deleting environment "{venv_name}" registry...', nl=False)
     if env_registry.delete_environment_registry(venv_name):
         typer.echo("✅")
     else:
@@ -206,26 +298,22 @@ def prune(
     errors_registry = []
     errors_backend = []
     for venv_info in orphaned_envs:
+        typer.echo()
         venv_name = venv_info["environment"]["name"]
-        typer.echo(f'\n- Pruning "{venv_name}" environment:')
 
-        typer.echo("  Deleting backend...", nl=False)
-        backend = venv_info["environment"]["backend"]
         try:
-            if backend == "conda":
-                conda_backend = CondaBackend()
-                if conda_backend.venv_exists(venv_name):
-                    conda_backend.delete_venv(venv_name, verbose=verbose)
-                    typer.echo("✅")
-                else:
-                    typer.secho('⚠️  Environment not found in backend', fg=typer.colors.YELLOW)
-            elif backend in ["venv", "virtualenv"]:
-                typer.secho('⚠️  Repository deleted, environment was already removed', fg=typer.colors.YELLOW)
+            delete_venv(
+                backend=venv_info["environment"]["backend"],
+                venv_name=venv_name,
+                venv_path=venv_info["environment"]["path"],
+                repo_path=Path(venv_info["repository"]["path"]),
+                verbose=verbose
+            )
         except Exception:
             errors_backend.append(venv_name)
             continue
 
-        typer.echo("  Deleting registry...", nl=False)
+        typer.echo(f'\n- Deleting "{venv_name}" registry...', nl=False)
         if env_registry.delete_environment_registry(venv_name):
             typer.echo("✅")
         else:
@@ -292,6 +380,7 @@ def reset(
         if not typer.confirm("\n  Continue?", default=False):
             typer.secho("  Aborted!", fg=typer.colors.RED)
             return None
+        typer.echo()
 
     # 1: Delete backend
     delete_venv(
@@ -416,6 +505,45 @@ def show(venv_name: str = typer.Argument(help="Name of the environment to displa
 
     except Exception as e:
         typer.secho(f"Error reading environment registry: {e}", fg=typer.colors.RED)
+
+
+def _reveal(path: Path) -> None:
+    """Open a path in the system's file explorer."""
+    validate_directory(path)
+    try:
+        if sys.platform == "darwin":  # macOS
+            subprocess.run(["open", path])
+            typer.secho("  ✅ Revealed!", fg=typer.colors.GREEN)
+        elif sys.platform == "win32":  # Windows
+            os.startfile(path)
+            typer.secho("  ✅ Revealed!", fg=typer.colors.GREEN)
+        elif sys.platform.startswith("linux"):  # Linux
+            subprocess.run(["xdg-open", path])
+            typer.secho("  ✅ Revealed!", fg=typer.colors.GREEN)
+        else:
+            error_msg = "  ⚠️  Unsupported Operating System!"
+            typer.secho(error_msg, fg=typer.colors.RED)
+            exit_with_error(error_msg)
+    except Exception as e:
+        error_msg = f"  ❗ Failed to open: {e}"
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
+
+
+def _open_editor(path: Path) -> None:
+    """Open a path in the default editor."""
+    validate_directory(path)
+    try:
+        code_cmd = shutil.which("code")
+        if code_cmd:
+            subprocess.run([code_cmd, str(path)])
+        else:
+            typer.launch(str(path))
+        typer.secho("  ✅ Opened!", fg=typer.colors.GREEN)
+    except Exception as e:
+        error_msg = f"  ❗ Failed to open: {e}"
+        typer.secho(error_msg, fg=typer.colors.RED)
+        exit_with_error(error_msg)
 
 
 def _show_summary_msg_reset(registry_name: str) -> None:

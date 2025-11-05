@@ -54,7 +54,7 @@ class CondaBackend:
         """
         if self.venv_exists(venv_name):
             if force:
-                typer.secho(f"⚠️  Environment '{venv_name}' already exists. Removing it...", fg=typer.colors.YELLOW)
+                typer.secho(f"⚠️  Environment '{venv_name}' already exists. Deleting it...", fg=typer.colors.YELLOW)
                 self.delete_venv(venv_name, verbose)
             else:
                 typer.secho(f"\n  ⚠️  Environment '{venv_name}' already exists. What would you like to do?", fg=typer.colors.YELLOW)

@@ -15,7 +15,7 @@ from gvit.commands.status import status
 from gvit.commands.init import init
 from gvit.commands.setup import setup as setup_repo
 from gvit.commands.tree import tree
-from gvit.commands.envs import list_, delete, show as show_env, prune, reset, show_activate, show_deactivate
+from gvit.commands.envs import list_, manage, delete, show as show_env, prune, reset, show_activate, show_deactivate
 from gvit.commands.config import setup, add_extra_deps, remove_extra_deps, show as show_config
 from gvit.commands.logs import show as show_logs, clear, stats, enable, disable, config as config_logs
 from gvit.utils.utils import get_app_commands, get_version
@@ -40,6 +40,7 @@ config.command()(show_config)
 
 envs = typer.Typer(help="Environments management commands.")
 envs.command(name="list")(list_)
+envs.command()(manage)
 envs.command()(delete)
 envs.command()(reset)
 envs.command(name="show")(show_env)

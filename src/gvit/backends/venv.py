@@ -24,7 +24,7 @@ class VenvBackend:
         """Create a virtual environment in the repository directory."""
         if self.venv_exists(venv_name, repo_path):
             if force:
-                typer.secho(f'⚠️  Environment "{venv_name}" already exists. Removing it...', fg=typer.colors.YELLOW)
+                typer.secho(f'⚠️  Environment "{venv_name}" already exists. Deleting it...', fg=typer.colors.YELLOW)
                 self.delete_venv(venv_name, repo_path)
             else:
                 typer.secho(f'\n  ⚠️  Environment "{venv_name}" already exists. What would you like to do?', fg=typer.colors.YELLOW)

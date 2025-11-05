@@ -24,5 +24,5 @@ def clear_error_message() -> None:
 
 def exit_with_error(message: str, code: int = 1) -> None:
     """Set error message and exit with given code."""
-    set_error_message(message)
+    set_error_message(message.strip())
     raise typer.Exit(code=code)

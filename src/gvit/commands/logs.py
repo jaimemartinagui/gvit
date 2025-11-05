@@ -97,7 +97,7 @@ def config(
 def show(
     limit: int = typer.Option(DEFAULT_LOG_SHOW_LIMIT, "--limit", "-l", help="Number of entries to show."),
     venv_name: str = typer.Option(None, "--venv-name", "-n", help="Filter logs by environment name."),
-    status: str = typer.Option(None, "--status", "-s", help="Filter logs by status (exit code). Comma separated values."),
+    status: str | None = typer.Option(None, "--status", "-s", help="Filter logs by status (exit code). Comma separated values."),
     errors: bool = typer.Option(False, "--errors", "-e", is_flag=True, help="Show error messages."),
     full_command: bool = typer.Option(False, "--full-command", "-f", is_flag=True, help="Show full command."),
 ) -> None:
@@ -117,7 +117,7 @@ def show(
     console.print(f"[cyan]📂 Logs Directory:[/cyan] {LOG_FILE.parent}")
     console.print(f"   [dim]{total_entries} entries | {stats['newest_entry']} - {stats['oldest_entry']}[/dim]\n")
 
-    logs = gvit_logger.read_logs(limit=limit)
+    logs = gvit_logger.read_logs()
     if not logs:
         console.print("[yellow]No logs found.[/yellow]")
         return None
@@ -133,6 +133,10 @@ def show(
         if not logs:
             console.print(f"[yellow]⚠️  No logs found for status: {status}[/yellow]")
             return None
+
+    n_entries_after_filter = len(logs)
+
+    logs = logs[:limit] if limit else logs
 
     table = Table(show_header=True, header_style="bold cyan", show_lines=True)
     table.add_column("n", style="green")
@@ -167,5 +171,5 @@ def show(
 
     console.print(table)
 
-    if len(logs) < total_entries:
-        typer.secho(f" Showing {len(logs)} entries out of {total_entries}.", dim=True)
+    if len(logs) < n_entries_after_filter:
+        typer.secho(f" Showing {len(logs)} entries out of {n_entries_after_filter}.", dim=True)

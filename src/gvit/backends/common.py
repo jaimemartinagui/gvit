@@ -60,7 +60,7 @@ def delete_venv(
     backend: str, venv_name: str, venv_path: str, repo_path: Path, verbose: bool = False
 ) -> None:
     """Function to delete a virtual environment."""
-    typer.echo(f'\n- Deleting environment "{venv_name}" backend...', nl=False)
+    typer.echo(f'- Deleting environment "{venv_name}" backend...', nl=False)
     if backend == "conda":
         conda_backend = CondaBackend()
         conda_backend.delete_venv(venv_name, verbose)
@@ -139,21 +139,40 @@ def install_dependencies(
     return resolved_base if base_sucess else None, resolved_extras
 
 
+def get_activate_cmd(backend: str, venv_name: str, venv_path: Path, relative: bool = True) -> str | None:
+    """Function to get the activate command for the environment."""
+    if backend == 'conda':
+        conda_backend = CondaBackend()
+        return conda_backend.get_activate_cmd(venv_name)
+    elif backend == 'venv':
+        venv_backend = VenvBackend()
+        return venv_backend.get_activate_cmd(str(venv_path), relative)
+    elif backend == 'virtualenv':
+        virtualenv_backend = VirtualenvBackend()
+        return virtualenv_backend.get_activate_cmd(str(venv_path), relative)
+    else:
+        return None
+
+
+def get_deactivate_cmd(backend: str) -> str | None:
+    """Function to get the deactivate command depending on the backend."""
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        return conda_backend.get_deactivate_cmd()
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        return venv_backend.get_deactivate_cmd()
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        return virtualenv_backend.get_deactivate_cmd()
+    else:
+        return None
+
+
 def show_summary_message(registry_name: str, repo_path: Path, venv_path: Path, backend: str) -> None:
     """Function to show the summary message of the process."""
     venv_name = venv_path.name
-    if backend == 'conda':
-        conda_backend = CondaBackend()
-        activate_cmd = conda_backend.get_activate_cmd(venv_name)
-    elif backend == 'venv':
-        venv_backend = VenvBackend()
-        activate_cmd = venv_backend.get_activate_cmd(str(venv_path))
-    elif backend == 'virtualenv':
-        virtualenv_backend = VirtualenvBackend()
-        activate_cmd = virtualenv_backend.get_activate_cmd(str(venv_path))
-    else:
-        activate_cmd = "# Activation command not available"
-
+    activate_cmd = get_activate_cmd(backend, venv_name, venv_path) or "# Activation command not available"
     typer.echo("\n🎉  Project setup complete!")
     typer.echo(f"📁  Repository -> {repo_path.name} ({str(repo_path)})")
     typer.echo(f"🐍  Environment [{backend}] -> {venv_name} ({str(venv_path)})")
