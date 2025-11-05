@@ -200,6 +200,7 @@ cython_debug/
 
 # macOS
 .DS_Store
+assets/.DS_Store
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to

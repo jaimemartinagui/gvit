@@ -44,6 +44,7 @@ Git-aware Virtual Environment Manager
   - [Check Status](#check-status)
   - [Configuration Management](#configuration-management)
   - [Environment Management](#environment-management)
+  - [Logs Management](#logs-management)
   - [Git Commands](#use-git-commands-directly)
   - [Explore Commands](#explore-commands)
 - 🧠 [How it works](#-how-it-works)
@@ -114,6 +115,7 @@ gvit setup
 * 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git.
 * 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`).
 * 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes.
+* 📊 **Command logging**: Automatic tracking of all command executions with analytics and error capture.
 * 🧘 **Cleans orphaned environments** automatically with `prune` command.
 * 🌳 **Visual command tree** to explore available commands.
 * 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings.
@@ -388,6 +390,65 @@ gvit envs prune --yes
 
 <img src="assets/img/prune.png" alt="gvit prune example" width="400">
 
+### Logs Management
+
+`gvit` automatically tracks all command executions for analytics and debugging:
+
+```bash
+# Show recent command logs
+gvit logs show
+
+# Limit number of entries
+gvit logs show --limit 10
+
+# Filter by environment
+gvit logs show --venv-name my-env
+
+# Show full commands
+gvit logs show --verbose
+
+# Show error messages
+gvit logs show --errors
+
+# Combine filters
+gvit logs show --limit 20 --venv-name my-env --errors --verbose
+
+# Show logs statistics
+gvit logs stats
+
+# Clear all logs
+gvit logs clear
+
+# Clear with auto-confirm
+gvit logs clear --yes
+
+# Enable/disable logging
+gvit logs enable
+gvit logs disable
+
+# Configure logging
+gvit logs config --show
+gvit logs config --max-entries 500
+gvit logs config --ignore "status,tree"
+```
+
+**What gets logged:**
+- ⏱️ **Timestamp**: When the command was executed.
+- 🎯 **Command**: Short command name (e.g., `status`, `envs.list`).
+- 🌍 **Environment**: Associated environment name (if applicable).
+- ⚡ **Duration**: Execution time in milliseconds.
+- ✅ **Status**: Success (✅) or failure (❌).
+- ❌ **Error**: Error message (if command failed).
+- 📝 **Full Command**: Complete command with all arguments (verbose mode).
+
+**Configuration:**
+- 🔧 Logs stored in `~/.config/gvit/logs/commands.csv`.
+- 🔢 Default max entries: 1000 (configurable).
+- 🚫 Ignored commands by default (configurable): read-only commands like `logs.show`, `envs.list`, `status`, `tree`.
+- 🎚️ Automatic log rotation when limit exceeded.
+
+<img src="assets/img/logs.png" alt="gvit prune example" width="500">
+
 ### Use Git Commands Directly
 
 `gvit` can replace `git` in your daily workflow! Any command not implemented in `gvit` automatically falls back to `git`:
@@ -462,6 +523,13 @@ gvit
 │   ├── show-activate
 │   └── show-deactivate
 ├── init
+├── logs
+│   ├── clear
+│   ├── config
+│   ├── disable
+│   ├── enable
+│   ├── show
+│   └── stats
 ├── pull
 ├── setup
 ├── status
@@ -553,6 +621,11 @@ python = "3.11"
 _base = "requirements.txt"
 dev = "requirements-dev.txt"
 test = "requirements-test.txt"
+
+[logging]
+enabled = true
+max_entries = 1000  # Maximum log entries before rotation
+ignored = ["logs.show", "status", "tree"]
 
 [backends.venv]
 name = ".venv"  # Directory name for venv (default: .venv)
