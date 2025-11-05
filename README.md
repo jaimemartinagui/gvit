@@ -399,7 +399,7 @@ gvit envs prune --yes
 gvit envs manage
 ```
 
-<img src="assets/gif/envs-manage.gif" alt="gvit envs manage example" width="500">
+<img src="assets/gif/envs-manage.gif" alt="gvit envs manage example" width="600">
 
 ### Logs Management
 
