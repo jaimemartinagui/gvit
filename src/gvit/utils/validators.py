@@ -6,14 +6,14 @@ from pathlib import Path
 
 import typer
 
-from gvit.utils.globals import SUPPORTED_BACKENDS, MIN_PYTHON_VERSION
+from gvit.utils.globals import SUPPORTED_BACKENDS, MIN_PYTHON_VERSION, SUPPORTED_PACKAGE_MANAGERS
 from gvit.error_handler import set_error_message, exit_with_error
 
 
 def validate_backend(backend: str) -> None:
     """Function to validate the provided backend."""
     if backend not in SUPPORTED_BACKENDS:
-        error_msg = f'Unsupported backend "{backend}". Supported backends: {", ".join(SUPPORTED_BACKENDS)}.'
+        error_msg = f'Unsupported backend "{backend}". Supported: {", ".join(SUPPORTED_BACKENDS)}.'
         set_error_message(error_msg)
         raise typer.BadParameter(error_msg)
 
@@ -49,6 +49,14 @@ def validate_python(python: str) -> None:
             f'Invalid Python version format "{python}". '
             f'Expected format: "X.Y" or "X.Y.Z" (e.g., "3.10", "3.11.2")'
         )
+        set_error_message(error_msg)
+        raise typer.BadParameter(error_msg)
+
+
+def validate_package_manager(package_manager: str) -> None:
+    """Function to validate the provided package manager."""
+    if package_manager not in SUPPORTED_PACKAGE_MANAGERS:
+        error_msg = f'Unsupported package manager "{package_manager}". Supported: {", ".join(SUPPORTED_PACKAGE_MANAGERS)}.'
         set_error_message(error_msg)
         raise typer.BadParameter(error_msg)
 

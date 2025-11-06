@@ -11,11 +11,12 @@ from gvit.utils.utils import (
     load_repo_config,
     get_backend,
     get_python,
+    get_package_manager,
     get_verbose,
 )
-from gvit.utils.validators import validate_backend, validate_python, validate_directory
+from gvit.utils.validators import validate_backend, validate_python, validate_package_manager, validate_directory
 from gvit.env_registry import EnvRegistry
-from gvit.utils.globals import SUPPORTED_BACKENDS
+from gvit.utils.globals import SUPPORTED_BACKENDS, SUPPORTED_PACKAGE_MANAGERS
 from gvit.backends.common import create_venv, install_dependencies, show_summary_message
 from gvit.git import Git
 
@@ -27,6 +28,7 @@ def init(
     venv_name: str = typer.Option(None, "--venv-name", "-n", help="Name of the virtual environment. If not provided, uses directory name."),
     backend: str = typer.Option(None, "--backend", "-b", help=f"Virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Python version for the virtual environment."),
+    package_manager: str = typer.Option(None, "--package-manager", "-m", help=f"Python package manager ({'/'.join(SUPPORTED_PACKAGE_MANAGERS)})."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Path to base dependencies file."),
     extra_deps: str = typer.Option(None, "--extra-deps", help="Extra dependency groups (e.g. 'dev,test')."),
     no_deps: bool = typer.Option(False, "--no-deps", is_flag=True, help="Skip dependency installation."),
@@ -70,8 +72,10 @@ def init(
     # 6. Create virtual environment
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
+    package_manager = package_manager or get_package_manager(local_config)
     validate_backend(backend)
     validate_python(python)
+    validate_package_manager(package_manager)
     registry_name, venv_name, venv_path = create_venv(venv_name, str(target_dir_), backend, python, force, verbose)
 
     # 7. Install dependencies
@@ -83,6 +87,7 @@ def init(
         resolved_base_deps, resolved_extra_deps = install_dependencies(
             venv_name=venv_name,
             backend=backend,
+            package_manager=package_manager,
             repo_path=str(target_dir_),
             base_deps=base_deps,
             extra_deps=extra_deps,

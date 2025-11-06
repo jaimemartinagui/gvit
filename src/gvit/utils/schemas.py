@@ -22,6 +22,7 @@ class VirtualenvConfig(TypedDict):
 class GvitLocalConfig(TypedDict):
     backend: NotRequired[str]
     python: NotRequired[str]
+    package_manager: NotRequired[str]
     verbose: NotRequired[bool]
 
 

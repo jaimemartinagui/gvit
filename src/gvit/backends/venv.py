@@ -57,9 +57,20 @@ class VenvBackend:
         path_hash = hashlib.sha256(str(venv_path).encode()).hexdigest()[:6]
         return f"{venv_path.parent.name}-{path_hash}"
 
+    def is_uv_installed(self, venv_path: Path) -> bool:
+        """Method to check if uv is installed (globally or locally)."""
+        uv_global_path = shutil.which("uv")
+        uv_executable_path = (
+            venv_path / "Scripts" / "uv.exe"
+            if platform.system() == "Windows"
+            else venv_path / "bin" / "uv"
+        )
+        return bool(uv_global_path) or uv_executable_path.exists()
+
     def install_dependencies(
         self,
         venv_name: str,
+        package_manager: str,
         repo_path: Path,
         deps_group_name: str,
         deps_path: Path,
@@ -74,14 +85,8 @@ class VenvBackend:
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
 
-        pip_path = self._get_pip_executable_path(repo_path / venv_name)
-        if deps_path.name == "pyproject.toml":
-            install_cmd = [pip_path, "install", "-e"]
-            install_cmd.append(f".[{','.join(extras)}]" if extras else ".")
-        elif deps_path.suffix in [".txt", ".in"]:
-            install_cmd = [pip_path, "install", "-r", str(deps_path)]
-        else:
-            typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
+        install_cmd = self._get_install_cmd(repo_path / venv_name, package_manager, deps_path, extras)
+        if not install_cmd:
             return False
 
         try:
@@ -148,9 +153,9 @@ class VenvBackend:
         """Method to get the complete pip freeze output for the environment (excluding repo URL)."""
         try:
             venv_path = self.get_venv_path(venv_name, repo_path)
-            pip_path = self._get_pip_executable_path(Path(venv_path))
+            python_path = self._get_python_executable_path(Path(venv_path))
             result = subprocess.run(
-                [pip_path, "freeze"],
+                [python_path, "-m", "pip", "freeze"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -169,7 +174,7 @@ class VenvBackend:
     def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
         """Create the virtual environment using the venv module or python -m venv."""
         try:
-            python_cmd = self._get_python_cmd(python)
+            python_cmd = self._get_global_python_cmd(python)
             result = subprocess.run(
                 [python_cmd, "-m", "venv", venv_path],
                 check=True,
@@ -186,9 +191,9 @@ class VenvBackend:
             typer.secho(error_msg, fg=typer.colors.RED)
             exit_with_error(error_msg)
 
-    def _get_python_cmd(self, python_version: str) -> str:
+    def _get_global_python_cmd(self, python_version: str) -> str:
         """
-        Get the python command for the specified version.
+        Get the global python command for the specified version.
         Tries: python{version} > python{major}.{minor} > python{major} > python > current python
             Example: "3.11" -> try python3.11, python3, python.
         """
@@ -224,12 +229,33 @@ class VenvBackend:
 
         return sys.executable
 
-    def _get_pip_executable_path(self, venv_path: Path) -> str:
-        """Get the pip executable path inside the venv."""
+    def _get_install_cmd(
+        self, venv_path: Path, package_manager: str, deps_path: Path, extras: list[str] | None
+    ) -> list[str] | None:
+        """Method to get the install command."""
+        python_path = self._get_python_executable_path(venv_path)
+
+        if package_manager == "uv":
+            install_cmd = ["uv", "pip", "install", "-p", python_path]
+        else:
+            install_cmd = [python_path, "-m", "pip", "install"]
+
+        if deps_path.name == "pyproject.toml":
+            install_cmd.extend(["-e", f".[{','.join(extras)}]" if extras else "."])
+        elif deps_path.suffix in [".txt", ".in"]:
+            install_cmd.extend(["-r", str(deps_path)])
+        else:
+            typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
+            return None
+
+        return install_cmd
+
+    def _get_python_executable_path(self, venv_path: Path) -> str:
+        """Get the python executable path inside the venv."""
         pip_executable_path = (
-            venv_path / "Scripts" / "pip.exe"
+            venv_path / "Scripts" / "python.exe"
             if platform.system() == "Windows"
-            else venv_path / "bin" / "pip"
+            else venv_path / "bin" / "python"
         )
         return str(pip_executable_path)
 

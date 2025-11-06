@@ -17,6 +17,7 @@ from gvit.utils.globals import (
     DEFAULT_BACKEND,
     DEFAULT_VENV_NAME,
     DEFAULT_PYTHON,
+    DEFAULT_PACKAGE_MANAGER,
     DEFAULT_BASE_DEPS,
     DEFAULT_VERBOSE
 )
@@ -85,6 +86,11 @@ def get_backend(config: LocalConfig) -> str:
 def get_python(config: LocalConfig | RepoConfig) -> str:
     """Function to get the python version from the config."""
     return config.get("gvit", {}).get("python", DEFAULT_PYTHON)
+
+
+def get_package_manager(config: LocalConfig | RepoConfig) -> str:
+    """Function to get the python package manager from the config."""
+    return config.get("gvit", {}).get("package_manager", DEFAULT_PACKAGE_MANAGER)
 
 
 def get_base_deps(config: LocalConfig | RepoConfig) -> str:

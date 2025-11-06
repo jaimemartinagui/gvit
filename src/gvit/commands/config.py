@@ -9,6 +9,7 @@ import typer
 
 from gvit.utils.globals import (
     SUPPORTED_BACKENDS,
+    SUPPORTED_PACKAGE_MANAGERS,
     FAKE_SLEEP_TIME,
     LOCAL_CONFIG_FILE,
     DEFAULT_LOG_ENABLED,
@@ -22,8 +23,9 @@ from gvit.utils.utils import (
     get_backend,
     get_venv_name,
     get_python,
+    get_package_manager
 )
-from gvit.utils.validators import validate_backend, validate_python
+from gvit.utils.validators import validate_backend, validate_python, validate_package_manager
 from gvit.utils.schemas import LocalConfig
 from gvit.utils.exceptions import CondaNotFoundError
 from gvit.backends.conda import CondaBackend
@@ -32,6 +34,7 @@ from gvit.backends.conda import CondaBackend
 def setup(
     backend: str = typer.Option(None, "--backend", "-b", help=f"Default virtual environment backend ({'/'.join(SUPPORTED_BACKENDS)})."),
     python: str = typer.Option(None, "--python", "-p", help="Default Python version."),
+    package_manager: str = typer.Option(None, "--package-manager", "-m", help=f"Default Python package manager ({'/'.join(SUPPORTED_PACKAGE_MANAGERS)})."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Default base dependencies path (relative to repository root path)."),
     logging: bool = typer.Option(None, "--logging", "-l", help="Enable logging.")
 ) -> None:
@@ -75,12 +78,20 @@ def setup(
         ).strip()
     validate_python(python)
 
+    if package_manager is None:
+        package_manager = typer.prompt(
+            f"- Select default Python package manager",
+            default=get_package_manager(config),
+        ).strip()
+    validate_package_manager(package_manager)
+
     if logging is None:
         logging = typer.confirm("- Activate logging?", default=DEFAULT_LOG_ENABLED)
 
     config = _get_updated_local_config(
         backend=backend,
         python=python,
+        package_manager=package_manager,
         base_deps=base_deps,
         conda_path=conda_path,
         venv_name=venv_name,
@@ -215,7 +226,7 @@ def show() -> None:
 
 
 def _get_updated_local_config(
-    backend: str, python: str, base_deps: str, conda_path: str | None, venv_name: str | None, logging: bool
+    backend: str, python: str, package_manager: str, base_deps: str, conda_path: str | None, venv_name: str | None, logging: bool
 ) -> LocalConfig:
     """Build the local configuration file, preserving existing extra deps."""
     existing_config = load_local_config()
@@ -223,6 +234,7 @@ def _get_updated_local_config(
         "gvit": {
             "backend": backend,
             "python": python,
+            "package_manager": package_manager
         },
         "deps": {
             "_base": base_deps,

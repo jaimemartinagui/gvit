@@ -14,10 +14,10 @@ import questionary
 import pyperclip
 
 from gvit.env_registry import EnvRegistry
-from gvit.utils.globals import ENVS_DIR, DEFAULT_LOG_SHOW_LIMIT
-from gvit.utils.utils import load_local_config, load_repo_config
+from gvit.utils.globals import ENVS_DIR, DEFAULT_LOG_SHOW_LIMIT, SUPPORTED_PACKAGE_MANAGERS
+from gvit.utils.utils import load_local_config, load_repo_config, get_package_manager
 from gvit.backends.common import create_venv, delete_venv, install_dependencies, get_activate_cmd, get_deactivate_cmd
-from gvit.utils.validators import validate_directory
+from gvit.utils.validators import validate_directory, validate_package_manager
 from gvit.error_handler import exit_with_error
 from gvit.commands.logs import show as show_logs
 
@@ -327,6 +327,7 @@ def prune(
 
 def reset(
     venv_name: str = typer.Argument(help="Name of the environment to reset."),
+    package_manager: str = typer.Option(None, "--package-manager", "-m", help=f"Python package manager ({'/'.join(SUPPORTED_PACKAGE_MANAGERS)})."),
     no_deps: bool = typer.Option(False, "--no-deps", is_flag=True, help="Skip dependency installation."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation."),
     verbose: bool = typer.Option(False, "--verbose", "-v", is_flag=True, help="Show verbose output.")
@@ -408,15 +409,20 @@ def reset(
         _show_summary_msg_reset(registry_name)
         return None
 
+    local_config = load_local_config()
+
     extra_deps = {k: v for k, v in deps.items() if k not in ["_base", "installed"]}
+    package_manager = package_manager or get_package_manager(local_config)
+    validate_package_manager(package_manager)
     resolved_base_deps, resolved_extra_deps = install_dependencies(
         venv_name=venv_name,
         backend=backend,
+        package_manager=package_manager,
         repo_path=str(repo_path),
         base_deps=deps.get("_base"),
         extra_deps=",".join(extra_deps),
         repo_config=load_repo_config(str(repo_path)),
-        local_config=load_local_config(),
+        local_config=local_config,
         verbose=verbose,
     )
 

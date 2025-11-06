@@ -18,6 +18,7 @@ MIN_PYTHON_VERSION = "3.10"
 DEFAULT_BACKEND = "venv"
 DEFAULT_VENV_NAME = ".venv"
 DEFAULT_PYTHON = "3.11"
+DEFAULT_PACKAGE_MANAGER = "uv"
 DEFAULT_BASE_DEPS = "requirements.txt"
 DEFAULT_VERBOSE = False
 DEFAULT_LOG_ENABLED = True
@@ -41,6 +42,11 @@ SUPPORTED_BACKENDS = [
     "venv",
     "conda",
     "virtualenv"
+]
+
+SUPPORTED_PACKAGE_MANAGERS = [
+    "uv",
+    "pip"
 ]
 
 ASCII_LOGO = r"""

@@ -82,9 +82,19 @@ class CondaBackend:
 
         return venv_name
 
+    def is_uv_installed(self, venv_name: str) -> bool:
+        """Method to check if uv is installed (globally or locally)."""
+        uv_global_path = shutil.which("uv")
+        result = subprocess.run(
+            [self.path, "run", "-n", venv_name, "which", "uv"], capture_output=True, text=True
+        )
+        is_installed_in_venv = result.returncode == 0
+        return bool(uv_global_path) or is_installed_in_venv
+
     def install_dependencies(
         self,
         venv_name: str,
+        package_manager: str,
         repo_path: Path,
         deps_group_name: str,
         deps_path: Path,
@@ -98,13 +108,8 @@ class CondaBackend:
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
 
-        if deps_path.name == "pyproject.toml":
-            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-e"]
-            install_cmd.append(f".[{','.join(extras)}]" if extras else ".")
-        elif deps_path.suffix in [".txt", ".in"]:
-            install_cmd = [self.path, "run", "-n", venv_name, "pip", "install", "-r", str(deps_path)]
-        else:
-            typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
+        install_cmd = self._get_install_cmd(venv_name, package_manager, deps_path, extras)
+        if not install_cmd:
             return False
 
         try:
@@ -212,6 +217,26 @@ class CondaBackend:
             if candidate.exists() and os.access(candidate, os.X_OK):
                 return str(candidate)
         return None
+
+    def _get_install_cmd(
+        self, venv_name: str, package_manager: str, deps_path: Path, extras: list[str] | None
+    ) -> list[str] | None:
+        """Method to get the install command."""
+        install_cmd = [self.path, "run", "-n", venv_name]
+        if package_manager == "uv":
+            install_cmd.extend(["uv", "pip", "install"])
+        else:
+            install_cmd.extend(["python", "-m", "pip", "install"])
+
+        if deps_path.name == "pyproject.toml":
+            install_cmd.extend(["-e", f".[{','.join(extras)}]" if extras else "."])
+        elif deps_path.suffix in [".txt", ".in"]:
+            install_cmd.extend(["-r", str(deps_path)])
+        else:
+            typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
+            return None
+
+        return install_cmd
 
     def _get_conda_windows_candidates(self) -> list[Path]:
         """Method to get the candidate conda paths for Windows."""

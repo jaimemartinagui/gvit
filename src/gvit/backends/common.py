@@ -76,6 +76,7 @@ def delete_venv(
 def install_dependencies(
     venv_name: str,
     backend: str,
+    package_manager: str,
     repo_path: str,
     base_deps: str | None,
     extra_deps: str | None,
@@ -87,19 +88,24 @@ def install_dependencies(
     Install dependencies with priority resolution system.
     Priority: CLI > Repo Config > Local Config > Default
     """
+    if package_manager == "uv" and not _is_uv_installed(backend, Path(repo_path) / venv_name):
+        typer.secho("\n⚠️  Package manager uv is not available. Falling back to pip.", fg=typer.colors.YELLOW)
+        package_manager = "pip"
+
     typer.echo("\n- Resolving dependencies...")
     resolved_base = _resolve_base_deps(base_deps, repo_config, local_config)
 
     if "pyproject.toml" in resolved_base:
         extra_deps_ = extra_deps.split(",") if extra_deps else None
         typer.echo(f'  Dependencies to install: pyproject.toml{f" (extras: {extra_deps})" if extra_deps else ""}')
-        typer.echo("\n- Installing project and dependencies", nl=False)
+        typer.echo(f"\n- Installing project and dependencies with {package_manager}", nl=False)
         typer.secho(" (this might take some time)", nl=False, fg=typer.colors.BLUE)
         typer.echo("...")
         deps_group_name = f"_base (extras: {extra_deps})" if extra_deps else "_base"
-        success = install_dependencies_from_file(
+        success = _install_dependencies_from_file(
             venv_name=venv_name,
             backend=backend,
+            package_manager=package_manager,
             repo_path=repo_path,
             deps_group_name=deps_group_name,
             deps_path=resolved_base,
@@ -114,21 +120,23 @@ def install_dependencies(
     resolved_extras = _resolve_extra_deps(extra_deps, repo_config, local_config)
     deps_to_install = {**{"_base": resolved_base}, **resolved_extras}
     typer.echo(f"  Dependencies to install: {deps_to_install}")
-    typer.echo("\n- Installing dependencies", nl=False)
+    typer.echo(f"\n- Installing dependencies with {package_manager}", nl=False)
     typer.secho(" (this might take some time)", nl=False, fg=typer.colors.BLUE)
     typer.echo("...")
-    base_sucess = install_dependencies_from_file(
+    base_sucess = _install_dependencies_from_file(
         venv_name=venv_name,
         backend=backend,
+        package_manager=package_manager,
         repo_path=repo_path,
         deps_group_name="_base",
         deps_path=resolved_base,
         verbose=verbose
     )
     for deps_group_name, deps_path in resolved_extras.items():
-        deps_group_sucess = install_dependencies_from_file(
+        deps_group_sucess = _install_dependencies_from_file(
             venv_name=venv_name,
             backend=backend,
+            package_manager=package_manager,
             repo_path=repo_path,
             deps_group_name=deps_group_name,
             deps_path=deps_path, verbose=verbose
@@ -209,9 +217,10 @@ def get_freeze_hash(venv_name: str, repo_path: Path, repo_url: str, backend: str
     return None
 
 
-def install_dependencies_from_file(
+def _install_dependencies_from_file(
     venv_name: str,
     backend: str,
+    package_manager: str,
     repo_path: str,
     deps_group_name: str,
     deps_path: str,
@@ -227,6 +236,7 @@ def install_dependencies_from_file(
         conda_backend = CondaBackend()
         return conda_backend.install_dependencies(
             venv_name=venv_name,
+            package_manager=package_manager,
             repo_path=repo_path_,
             deps_group_name=deps_group_name,
             deps_path=deps_abs_path,
@@ -237,6 +247,7 @@ def install_dependencies_from_file(
         venv_backend = VenvBackend()
         return venv_backend.install_dependencies(
             venv_name=venv_name,
+            package_manager=package_manager,
             repo_path=repo_path_,
             deps_group_name=deps_group_name,
             deps_path=deps_abs_path,
@@ -247,6 +258,7 @@ def install_dependencies_from_file(
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.install_dependencies(
             venv_name=venv_name,
+            package_manager=package_manager,
             repo_path=repo_path_,
             deps_group_name=deps_group_name,
             deps_path=deps_abs_path,
@@ -317,6 +329,20 @@ def show_freeze_diff(added: dict[str, str], removed: dict[str, str], changed: di
 def _resolve_base_deps(base_deps: str | None, repo_config: RepoConfig, local_config: LocalConfig) -> str:
     """Resolve base dependencies."""
     return base_deps or repo_config.get("deps", {}).get("_base") or get_base_deps(local_config)
+
+
+def _is_uv_installed(backend: str, venv_path: Path) -> bool:
+    """Function to check if uv is installed (globally or locally)."""
+    if backend == "conda":
+        conda_backend = CondaBackend()
+        return conda_backend.is_uv_installed(venv_path.name)
+    elif backend == "venv":
+        venv_backend = VenvBackend()
+        return venv_backend.is_uv_installed(venv_path)
+    elif backend == "virtualenv":
+        virtualenv_backend = VirtualenvBackend()
+        return virtualenv_backend.is_uv_installed(venv_path)
+    return False
 
 
 def _resolve_extra_deps(

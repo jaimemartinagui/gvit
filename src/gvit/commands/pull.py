@@ -7,16 +7,18 @@ from pathlib import Path
 import typer
 
 from gvit.env_registry import EnvRegistry
-from gvit.utils.utils import load_local_config, load_repo_config, get_verbose, get_extra_deps
-from gvit.backends.common import install_dependencies_from_file
+from gvit.utils.utils import load_local_config, load_repo_config, get_verbose, get_extra_deps, get_package_manager
+from gvit.backends.common import install_dependencies
 from gvit.utils.schemas import RegistryFile, RepoConfig
-from gvit.utils.validators import validate_directory, validate_git_repo
+from gvit.utils.validators import validate_directory, validate_git_repo, validate_package_manager
 from gvit.git import Git
+from gvit.utils.globals import SUPPORTED_PACKAGE_MANAGERS
 
 
 def pull(
     ctx: typer.Context,
     target_dir: str = typer.Option(".", "--target-dir", "-t", help="Directory of the repository (defaults to current directory)."),
+    package_manager: str = typer.Option(None, "--package-manager", "-m", help=f"Python package manager ({'/'.join(SUPPORTED_PACKAGE_MANAGERS)})."),
     base_deps: str = typer.Option(None, "--base-deps", "-d", help="Path to base dependencies file (overrides repo/local config)."),
     extra_deps: str = typer.Option(None, "--extra-deps", help="Extra dependency groups (e.g. 'dev,test' or 'dev:path.txt,test:path2.txt')."),
     no_deps: bool = typer.Option(False, "--no-deps", help="Skip dependency reinstallation even if changes detected."),
@@ -72,6 +74,10 @@ def pull(
     # 7. Get the current path (after pull) for the base and extra deps
     repo_config = load_repo_config(str(target_dir_))
     current_deps = _get_current_deps(base_deps, extra_deps, repo_config, env)
+    if not force_deps and not current_deps:
+        typer.echo("\n- There are no tracked dependencies.")
+        typer.echo("\n🎉 Repository updated successfully!")
+        return None
 
     # 8. Get dep groups to reinstall
     if force_deps:
@@ -89,32 +95,25 @@ def pull(
         typer.echo("✅")
 
     # 9. Reinstall changed dependencies
-    typer.echo(f"\n- Dependency groups to re-install: {list(to_reinstall)}.")
-    from_pyproject = {k: v for k, v in to_reinstall.items() if "pyproject.toml" in v}
-    if from_pyproject:
-        extras = [dep_name for dep_name in from_pyproject if dep_name != "_base"]
-        deps_group_name = f"_base (extras: {','.join(extras)})" if extras else "_base"
-        dep_path = from_pyproject[list(from_pyproject)[0]]
-        install_dependencies_from_file(
-            venv_name=venv_name,
-            backend=env['environment']['backend'],
-            repo_path=str(target_dir_),
-            deps_group_name=deps_group_name,
-            deps_path=dep_path,
-            extra_deps=extras,
-            verbose=verbose
-        )
-    # Install any other dependency files
-    other_deps = {k: v for k, v in to_reinstall.items() if k not in from_pyproject}
-    for dep_name, dep_path in other_deps.items():
-        install_dependencies_from_file(
-            venv_name=venv_name,
-            backend=env['environment']['backend'],
-            repo_path=str(target_dir_),
-            deps_group_name=dep_name,
-            deps_path=dep_path,
-            verbose=verbose
-        )
+    if "_base" not in to_reinstall:
+        to_reinstall["_base"] = current_deps["_base"]
+    package_manager = package_manager or get_package_manager(local_config)
+    validate_package_manager(package_manager)
+    # I do not care about the resolved_base_deps and resolved_extra_deps returned by the install_dependencies
+    # function because there might be some extra deps which are not reinstalled, so we have to pass to
+    # the save_venv_info function the current_deps, to keep track of all the groups, not just the ones
+    # that have been modified and, therefore, reinstalled.
+    install_dependencies(
+        venv_name=venv_name,
+        backend=env['environment']['backend'],
+        package_manager=package_manager,
+        repo_path=str(target_dir_),
+        base_deps=to_reinstall["_base"],
+        extra_deps=_get_parsed_extra_deps(to_reinstall),
+        repo_config=repo_config,
+        local_config=local_config,
+        verbose=verbose
+    )
 
     # 10. Update registry with new hashes
     env_registry.save_venv_info(
@@ -130,6 +129,15 @@ def pull(
     )
 
     typer.echo("\n🎉 Repository and environment updated successfully!")
+
+
+def _get_parsed_extra_deps(to_reinstall: dict[str, str]) -> str:
+    """Function to get the correct extra_deps format for the installation."""
+    return (
+        ",".join([k for k in to_reinstall if k != "_base"])
+        if "pyproject.toml" in to_reinstall["_base"]
+        else ",".join(f"{k}:{v}" for k, v in to_reinstall.items() if k != "_base")
+    )
 
 
 def _get_current_deps(
