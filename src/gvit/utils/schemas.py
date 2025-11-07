@@ -35,6 +35,7 @@ class BackendsConfig(TypedDict):
     conda: NotRequired[CondaConfig]
     venv: NotRequired[VenvConfig]
     virtualenv: NotRequired[VirtualenvConfig]
+    uv: NotRequired[VirtualenvConfig]
 
 
 class LoggingConfig(TypedDict):

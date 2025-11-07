@@ -65,7 +65,7 @@ def setup(
                 "You can also specify the path manually in your configuration file under "
                 "`backends.conda.path`."
             )
-    elif backend in ["venv", "virtualenv"]:
+    elif backend in ["venv", "virtualenv", "uv"]:
         venv_name = typer.prompt(
             f"- Select default virtual environment name",
             default=get_venv_name(config),
@@ -255,5 +255,7 @@ def _get_updated_local_config(
             config["backends"]["venv"] = {"name": venv_name}
         elif venv_name and backend == "virtualenv":
             config["backends"]["virtualenv"] = {"name": venv_name}
+        elif venv_name and backend == "uv":
+            config["backends"]["uv"] = {"name": venv_name}
 
     return cast(LocalConfig, config)

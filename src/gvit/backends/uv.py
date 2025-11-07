@@ -1,5 +1,5 @@
 """
-Module with the venv backend class.
+Module with the uv backend class.
 """
 
 import re
@@ -15,8 +15,10 @@ import typer
 from gvit.error_handler import exit_with_error
 
 
-class VenvBackend:
-    """Class for operations with the venv backend."""
+class UvBackend:
+
+    def __init__(self) -> None:
+        pass
 
     def create_venv(
         self, venv_name: str, repo_path: Path, python: str, force: bool, verbose: bool = False
@@ -70,7 +72,6 @@ class VenvBackend:
     def install_dependencies(
         self,
         venv_name: str,
-        package_manager: str,
         repo_path: Path,
         deps_group_name: str,
         deps_path: Path,
@@ -85,7 +86,7 @@ class VenvBackend:
             typer.secho(f'⚠️  "{deps_path}" not found.', fg=typer.colors.YELLOW)
             return False
 
-        install_cmd = self._get_install_cmd(repo_path / venv_name, package_manager, deps_path, extras)
+        install_cmd = self._get_install_cmd(repo_path / venv_name, deps_path, extras)
         if not install_cmd:
             return False
 
@@ -155,7 +156,7 @@ class VenvBackend:
             venv_path = self.get_venv_path(venv_name, repo_path)
             python_path = self._get_python_executable_path(Path(venv_path))
             result = subprocess.run(
-                [python_path, "-m", "pip", "freeze"],
+                ["uv", "pip", "freeze", "--python", python_path],
                 capture_output=True,
                 text=True,
                 check=True
@@ -172,18 +173,15 @@ class VenvBackend:
         return hashlib.sha256(freeze.encode()).hexdigest()[:16] if freeze else None
 
     def _create_venv(self, venv_path: str, python: str, verbose: bool = False) -> None:
-        """Create the virtual environment using python -m venv."""
+        """Create the virtual environment using uv."""
         try:
-            python_cmd = self._get_global_python_cmd(python)
             result = subprocess.run(
-                [python_cmd, "-m", "venv", venv_path],
+                ["uv", "venv", venv_path, "--python", python],
                 check=True,
                 capture_output=True,
                 text=True,
             )
             typer.echo("✅")
-            if python_cmd != f"python{python}":
-                typer.secho(f"  ⚠️  python{python} executable not available, {python_cmd} was used.", fg=typer.colors.YELLOW)
             if verbose and result.stdout:
                 typer.echo(result.stdout)
         except subprocess.CalledProcessError as e:
@@ -191,55 +189,12 @@ class VenvBackend:
             typer.secho(error_msg, fg=typer.colors.RED)
             exit_with_error(error_msg)
 
-    def _get_global_python_cmd(self, python_version: str) -> str:
-        """
-        Get the global python command for the specified version.
-        Tries: python{version} > python{major}.{minor} > python{major} > python > current python
-            Example: "3.11" -> try python3.11, python3, python.
-        """
-        candidates = []
-        candidates.append(f"python{python_version}")
-        if "." in python_version:
-            major = python_version.split(".")[0]
-            candidates.append(f"python{major}")
-
-        # Fallbacks
-        candidates.extend(["python3", "python"])
-
-        for cmd in set(candidates):
-            if shutil.which(cmd):
-                try:
-                    result = subprocess.run(
-                        [cmd, "--version"],
-                        capture_output=True,
-                        text=True,
-                        check=True
-                    )
-                    version_str = result.stdout.strip()
-                    # Check if version matches (fuzzy match on major.minor)
-                    if python_version in version_str or python_version.split(".")[0] in version_str:
-                        return cmd
-                except subprocess.CalledProcessError:
-                    continue
-
-        # If no match found, use current Python
-        typer.secho(
-            f"⚠️  Python {python_version} not found, using current Python ({sys.version.split()[0]})", fg=typer.colors.YELLOW
-        )
-
-        return sys.executable
-
     def _get_install_cmd(
-        self, venv_path: Path, package_manager: str, deps_path: Path, extras: list[str] | None
+        self, venv_path: Path, deps_path: Path, extras: list[str] | None
     ) -> list[str] | None:
         """Method to get the install command."""
         python_path = self._get_python_executable_path(venv_path)
-
-        if package_manager == "uv":
-            install_cmd = ["uv", "pip", "install", "-p", python_path]
-        else:
-            install_cmd = [python_path, "-m", "pip", "install"]
-
+        install_cmd = ["uv", "pip", "install", "-p", python_path]
         if deps_path.name == "pyproject.toml":
             install_cmd.extend(["-e", f".[{','.join(extras)}]" if extras else "."])
         elif deps_path.suffix in [".txt", ".in"]:
@@ -247,7 +202,6 @@ class VenvBackend:
         else:
             typer.secho(f"❗ Unsupported dependency file format: {deps_path.name}", fg=typer.colors.RED)
             return None
-
         return install_cmd
 
     def _get_python_executable_path(self, venv_path: Path) -> str:

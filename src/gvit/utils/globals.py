@@ -41,7 +41,8 @@ DEFAULT_LOG_IGNORED_COMMANDS = [
 SUPPORTED_BACKENDS = [
     "venv",
     "conda",
-    "virtualenv"
+    "virtualenv",
+    "uv"
 ]
 
 SUPPORTED_PACKAGE_MANAGERS = [

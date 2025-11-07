@@ -96,7 +96,7 @@ gvit setup
 ## ☑️ What `gvit` does
 
 * 🪄 **Automatically creates environments** when cloning or initializing repos.
-* 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support.
+* 🐍 **Multiple backends**: `venv` (built-in), `conda`, `virtualenv` and `uv` support.
 * 📦 Choose your **package manager** to install dependencies (`uv` or `pip`).
 * 🔄 **Auto-syncs environment on pull** if there are any changes in the dependencies.
 * ⬇︎ **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths. **Supports extra dependencies** (dev, test, etc.).
@@ -180,12 +180,15 @@ gvit config setup --backend conda --package-manager uv --python 3.11
 # Or use virtualenv with pip
 gvit config setup --backend virtualenv --package-manager pip --python 3.11
 
+# Or use uv with uv
+gvit config setup --backend uv --package-manager uv --python 3.11
+
 # Or any other combination...
 ```
 
 ### Package Manager & Virtual Environment Backend
 
-The **package manager** (`uv` or `pip`) and the **virtual environment backend** (`venv`, `virtualenv`, or `conda`) serve different purposes but complement each other.
+The **package manager** (`uv` or `pip`) and the **virtual environment backend** (`venv`, `virtualenv`, `conda` or `uv`) serve different purposes but complement each other.
 
 The backend defines where the Python environment lives and how it is isolated — for example, whether packages are stored in a venv directory, a virtualenv, or a Conda environment.
 
@@ -367,7 +370,7 @@ gvit envs show-activate
 # Show activate command for a specific environment
 gvit envs show-activate --venv-name my-env
 
-# Show activate command with relative path (venv/virtualenv only)
+# Show activate command with relative path (venv/virtualenv/uv only)
 gvit envs show-activate --relative
 
 # Activate environment directly (recommended)
@@ -600,6 +603,7 @@ gvit
    - **`venv`**: Python's built-in venv module (creates `.venv/`, or the defined environment name, in repo).
    - **`virtualenv`**: Enhanced virtual environments (creates `.venv/`, or the defined environment name, in repo).
    - **`conda`**: Conda environments (centralized management).
+   - **`uv`**: uv environments (an extremely fast Python package and project manager, written in Rust).
 2. **Resolves dependencies** with priority system:
    - CLI arguments (highest priority).
    - Repository config (`.gvit.toml`).
@@ -629,7 +633,7 @@ Global preferences: `~/.config/gvit/config.toml`
 
 ```toml
 [gvit]
-backend = "venv"  # or "conda", "virtualenv"
+backend = "venv"  # or "conda", "virtualenv", "uv"
 python = "3.11"
 
 [deps]
@@ -647,6 +651,9 @@ name = ".venv"  # Directory name for venv (default: .venv)
 
 [backends.virtualenv]
 name = ".venv"  # Directory name for virtualenv (default: .venv)
+
+[backends.uv]
+name = ".venv"  # Directory name for uv (default: .venv)
 
 [backends.conda]
 path = "/path/to/conda"  # Optional: custom conda path
@@ -732,7 +739,8 @@ gvit/
 │   ├── backends/                   # Backend implementations
 │   │   ├── common.py               # Shared backend functions
 │   │   ├── venv.py                 # Python's built-in venv
-│   │   ├── virtualenv.py           # virtualenv (faster, more features)
+│   │   ├── virtualenv.py           # virtualenv
+│   │   ├── uv.py                   # uv (faster, more features)
 │   │   └── conda.py                # conda environments
 │   └── utils/                      # Utilities & helpers
 │       ├── exceptions.py           # Custom exception classes
@@ -808,7 +816,7 @@ Defaults (globals.py)
 
 ## 🧭 Roadmap
 
-### Current Release (v0.4.0)
+### Current Release (v1.0.0)
 
 | Feature | Status | Description |
 |---------|--------|-------------|
@@ -818,9 +826,10 @@ Defaults (globals.py)
 | **Pull command** | ✅ | Smart git pull with automatic dependency sync |
 | **Commit command** | ✅ | Git commit with automatic dependency validation |
 | **Tree command** | ✅ | Visual command structure explorer |
-| **Venv backend** | ✅ | Python's built-in venv support |
-| **Conda backend** | ✅ | Complete conda integration |
-| **Virtualenv backend** | ✅ | Complete virtualenv integration |
+| **venv backend** | ✅ | Python's built-in venv support |
+| **conda backend** | ✅ | Complete conda integration |
+| **virtualenv backend** | ✅ | Complete virtualenv integration |
+| **uv backend** | ✅ | Complete uv integration |
 | **Config management** | ✅ | `setup`, `add-extra-deps`, `remove-extra-deps`, `show` |
 | **Environment registry** | ✅ | Track environments with metadata, dependency hashes, and freeze snapshots |
 | **Environment management** | ✅ | `list`, `show`, `delete`, `prune`, `reset`, `show-activate`, `show-deactivate` commands |

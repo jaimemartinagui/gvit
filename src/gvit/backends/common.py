@@ -9,6 +9,7 @@ import typer
 from gvit.backends.conda import CondaBackend
 from gvit.backends.venv import VenvBackend
 from gvit.backends.virtualenv import VirtualenvBackend
+from gvit.backends.uv import UvBackend
 from gvit.utils.schemas import LocalConfig, RepoConfig
 from gvit.utils.utils import get_base_deps, get_extra_deps
 from gvit.utils.globals import DEFAULT_VENV_NAME
@@ -50,6 +51,12 @@ def create_venv(
         venv_name = virtualenv_backend.create_venv(venv_name, repo_path_, python, force, verbose)
         registry_name = virtualenv_backend.generate_unique_venv_registry_name(repo_path_ / venv_name)
         venv_path = virtualenv_backend.get_venv_path(venv_name, repo_path_)
+    elif backend == "uv":
+        venv_name = venv_name or DEFAULT_VENV_NAME
+        uv_backend = UvBackend()
+        uv_backend.create_venv(venv_name, repo_path_, python, force, verbose)
+        registry_name = uv_backend.generate_unique_venv_registry_name(repo_path_ / venv_name)
+        venv_path = uv_backend.get_venv_path(venv_name, repo_path_)
     else:
         raise Exception(f'Backend "{backend}" not supported.')
 
@@ -70,6 +77,9 @@ def delete_venv(
     elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         virtualenv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        uv_backend.delete_venv(Path(venv_path).name, repo_path, verbose)
     typer.echo("✅")
 
 
@@ -91,6 +101,8 @@ def install_dependencies(
     if package_manager == "uv" and not _is_uv_installed(backend, Path(repo_path) / venv_name):
         typer.secho("\n⚠️  Package manager uv is not available. Falling back to pip.", fg=typer.colors.YELLOW)
         package_manager = "pip"
+
+    package_manager = "uv" if backend == "uv" else package_manager
 
     typer.echo("\n- Resolving dependencies...")
     resolved_base = _resolve_base_deps(base_deps, repo_config, local_config)
@@ -149,15 +161,18 @@ def install_dependencies(
 
 def get_activate_cmd(backend: str, venv_name: str, venv_path: Path, relative: bool = True) -> str | None:
     """Function to get the activate command for the environment."""
-    if backend == 'conda':
+    if backend == "conda":
         conda_backend = CondaBackend()
         return conda_backend.get_activate_cmd(venv_name)
-    elif backend == 'venv':
+    elif backend == "venv":
         venv_backend = VenvBackend()
         return venv_backend.get_activate_cmd(str(venv_path), relative)
-    elif backend == 'virtualenv':
+    elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.get_activate_cmd(str(venv_path), relative)
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.get_activate_cmd(str(venv_path), relative)
     else:
         return None
 
@@ -173,6 +188,9 @@ def get_deactivate_cmd(backend: str) -> str | None:
     elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.get_deactivate_cmd()
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.get_deactivate_cmd()
     else:
         return None
 
@@ -200,6 +218,9 @@ def get_freeze(venv_name: str, repo_path: Path, repo_url: str, backend: str) -> 
     elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.get_freeze(venv_name, repo_path, repo_url)
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.get_freeze(venv_name, repo_path, repo_url)
     return None
 
 
@@ -214,6 +235,9 @@ def get_freeze_hash(venv_name: str, repo_path: Path, repo_url: str, backend: str
     elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.get_freeze_hash(venv_name, repo_path, repo_url)
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.get_freeze_hash(venv_name, repo_path, repo_url)
     return None
 
 
@@ -259,6 +283,16 @@ def _install_dependencies_from_file(
         return virtualenv_backend.install_dependencies(
             venv_name=venv_name,
             package_manager=package_manager,
+            repo_path=repo_path_,
+            deps_group_name=deps_group_name,
+            deps_path=deps_abs_path,
+            extras=extra_deps,
+            verbose=verbose
+        )
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.install_dependencies(
+            venv_name=venv_name,
             repo_path=repo_path_,
             deps_group_name=deps_group_name,
             deps_path=deps_abs_path,
@@ -342,6 +376,9 @@ def _is_uv_installed(backend: str, venv_path: Path) -> bool:
     elif backend == "virtualenv":
         virtualenv_backend = VirtualenvBackend()
         return virtualenv_backend.is_uv_installed(venv_path)
+    elif backend == "uv":
+        uv_backend = UvBackend()
+        return uv_backend.is_uv_installed(venv_path)
     return False
 
 
