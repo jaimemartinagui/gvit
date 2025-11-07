@@ -183,7 +183,7 @@ gvit config setup --backend virtualenv --package-manager pip --python 3.11
 # Or any other combination...
 ```
 
-### Package Manager vs Virtual Environment Backend
+### Package Manager & Virtual Environment Backend
 
 The **package manager** (`uv` or `pip`) and the **virtual environment backend** (`venv`, `virtualenv`, or `conda`) serve different purposes but complement each other.
 
