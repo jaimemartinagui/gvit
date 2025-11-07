@@ -1,13 +1,11 @@
-"""Integration tests for envs commands."""
+"""
+Integration tests for envs commands.
+"""
 
-from pathlib import Path
-
-import pytest
 import toml
 from typer.testing import CliRunner
 
 from gvit.cli import app
-from gvit.env_registry import EnvRegistry
 
 
 runner = CliRunner()
@@ -56,7 +54,7 @@ class TestEnvsDeleteCommand:
 
     def test_delete_non_existent_environment(self, temp_config_dir):
         """Test deleting an environment that doesn't exist."""
-        result = runner.invoke(app, ["envs", "delete", "non-existent"])
+        result = runner.invoke(app, ["envs", "delete", "non-existent", "-y"])
         # The command should complete but show a warning
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
@@ -91,7 +89,7 @@ class TestEnvsDeleteCommand:
         # Mock subprocess.run to avoid actual venv operations
         mock_run = mocker.patch("subprocess.run")
         
-        result = runner.invoke(app, ["envs", "delete", "test-env"])
+        result = runner.invoke(app, ["envs", "delete", "test-env", "-y"])
         assert result.exit_code == 0
         assert not env_file.exists()
 

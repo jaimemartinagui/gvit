@@ -189,7 +189,7 @@ The **package manager** (`uv` or `pip`) and the **virtual environment backend** 
 
 The backend defines where the Python environment lives and how it is isolated — for example, whether packages are stored in a venv directory, a virtualenv, or a Conda environment.
 
-The package manager defines how dependencies are installed and resolved inside that environment — for example, using pip install for the standard Python installer or uv pip install for a faster, cache-optimized installation.
+The package manager defines how dependencies are installed and resolved inside that environment — for example, using `pip install` for the standard Python installer or `uv pip install` for a faster, cache-optimized installation.
 
 In `gvit` users can freely combine both layers (e.g., uv with venv, or pip with conda), since the package manager operates independently of the environment backend as long as it can target the correct Python interpreter.
 
@@ -849,15 +849,19 @@ Defaults (globals.py)
 
 `gvit` has a comprehensive test suite with 49 tests and growing coverage.
 
+When testing CLI commands built with Typer (or Click), the test runner internally captures and redirects standard output (**stdout**). At the same time, pytest also captures stdout by default. This double capture can interfere with how Typer detects and writes to the terminal, causing missing or inconsistent output during tests. Running tests with the `-s` flag disables pytest’s output capture, allowing Typer’s console output (including echo and secho) to behave normally.
+
+In short, use `pytest -s` to ensure CLI tests run with the same behavior as when executing the commands directly in a real terminal.
+
 ```bash
 # Install test dependencies
 pip install -e ".[test]"
 
 # Run all tests
-pytest
+pytest -s
 
 # Run with coverage report
-pytest --cov=src/gvit --cov-report=html
+pytest -s --cov=src/gvit --cov-report=html
 open tests/htmlcov/index.html
 ```
 

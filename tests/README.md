@@ -29,12 +29,16 @@ pip install -e ".[test]"
 
 ### Run Tests
 
+When testing CLI commands built with Typer (or Click), the test runner internally captures and redirects standard output (**stdout**). At the same time, pytest also captures stdout by default. This double capture can interfere with how Typer detects and writes to the terminal, causing missing or inconsistent output during tests. Running tests with the `-s` flag disables pytest’s output capture, allowing Typer’s console output (including echo and secho) to behave normally.
+
+In short, use `pytest -s` to ensure CLI tests run with the same behavior as when executing the commands directly in a real terminal.
+
 ```bash
 # Run all tests
-pytest
+pytest -s
 
 # Run with coverage
-pytest --cov=src/gvit --cov-report=html
+pytest -s --cov=src/gvit --cov-report=html
 open tests/htmlcov/index.html
 ```
 
@@ -82,16 +86,13 @@ tests/
 
 ```bash
 # All tests
-pytest
+pytest -s
 
 # With verbose output
-pytest -v
+pytest -s -v
 
 # Stop at first failure
-pytest -x
-
-# Show print statements
-pytest -s
+pytest -s -x
 ```
 
 ### By Category
@@ -200,19 +201,19 @@ Coverage reports are generated in the `tests/` directory:
 
 ```bash
 # Run tests with coverage
-pytest
+pytest -s
 
 # Open HTML report
 open tests/htmlcov/index.html
 
 # Terminal report only
-pytest --cov=src/gvit --cov-report=term-missing
+pytest -s --cov=src/gvit --cov-report=term-missing
 
 # Single module
-pytest --cov=src/gvit/env_registry.py --cov-report=term-missing
+pytest -s --cov=src/gvit/env_registry.py --cov-report=term-missing
 
 # With minimum threshold
-pytest --cov=src/gvit --cov-fail-under=80
+pytest -s --cov=src/gvit --cov-fail-under=80
 ```
 
 ### HTML Coverage Report Features
@@ -255,7 +256,7 @@ def test_suma_negativo():
 
 ```bash
 # Branch coverage (if/else paths)
-pytest --cov=src/gvit --cov-branch
+pytest -s --cov=src/gvit --cov-branch
 
 # Combine multiple runs
 pytest tests/unit/ --cov=src/gvit
@@ -418,10 +419,10 @@ pip install -e ".[test]"
 **Solution:**
 ```bash
 # Identify slow tests
-pytest --durations=10
+pytest -s --durations=10
 
 # Run only fast tests
-pytest -m "not slow"
+pytest -s -m "not slow"
 ```
 
 ---

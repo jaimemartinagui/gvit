@@ -1,8 +1,7 @@
-"""Unit tests for utility functions."""
+"""
+Unit tests for utility functions.
+"""
 
-from pathlib import Path
-
-import pytest
 import toml
 
 from gvit.utils.utils import (
