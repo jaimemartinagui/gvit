@@ -36,7 +36,7 @@ Git-aware Virtual Environment Manager
 - 💻 [Installation](#-installation)
 - 🧩 [Usage](#-usage)
   - [Initial Configuration](#initial-configuration)
-  - [Package Manager vs Virtual Environment Backend](#pm_vs_venv_backend)
+  - [Package Manager & Virtual Environment Backend](#package-manager-&-virtual-environment-backend)
   - [Clone a Repository](#clone-a-repository)
   - [Initialize a New Project](#initialize-a-new-project)
   - [Setup an Existing Repository](#setup-an-existing-repository)
