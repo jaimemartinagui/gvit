@@ -68,7 +68,13 @@ def load_repo_config(repo_path: str) -> RepoConfig:
         return cast(RepoConfig, toml.load(config_file_path))
     pyproject_path = Path(repo_path) / "pyproject.toml"
     if pyproject_path.exists():
-        return {"gvit": toml.load(pyproject_path).get("tool", {}).get("gvit", {})}
+        content = toml.load(pyproject_path).get("tool", {}).get("gvit", {})
+        repo_config = {}
+        if gvit := {k: v for k, v in content.items() if k != "deps"}:
+            repo_config["gvit"] = gvit
+        if deps := content.get("deps"):
+            repo_config["deps"] = deps
+        return cast(RepoConfig, repo_config)
     return {}
 
 

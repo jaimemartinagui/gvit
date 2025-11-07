@@ -42,3 +42,11 @@ gvit = "gvit.cli:gvit_cli"
 Homepage = "https://github.com/jaimemartinagui/gvit"
 
 [tool.hatch.build.targets.sdist]
+
+[tool.gvit]
+python = "3.12"
+
+[tool.gvit.deps]
+_base = "pyproject.toml"
+dev = "pyproject.toml"
+test = "pyproject.toml"
