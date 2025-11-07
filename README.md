@@ -36,6 +36,7 @@ Git-aware Virtual Environment Manager
 - 💻 [Installation](#-installation)
 - 🧩 [Usage](#-usage)
   - [Initial Configuration](#initial-configuration)
+  - [Package Manager vs Virtual Environment Backend](#pm_vs_venv_backend)
   - [Clone a Repository](#clone-a-repository)
   - [Initialize a New Project](#initialize-a-new-project)
   - [Setup an Existing Repository](#setup-an-existing-repository)
@@ -90,39 +91,25 @@ gvit setup
 
 🎉 Environment created and dependencies installed!
 
-### When to use gvit vs other tools
-
-**Use `gvit` if you:**
-- Work on multiple projects simultaneously.
-- Want Git workflows to automatically sync environments.
-- Need centralized environment tracking.
-- Want flexibility in backends (e.g. `conda` is crucial for certain DS/ML projects).
-- Work with legacy projects that still do not use `pyproject.toml`.
-
-**Use `uv` if you:**
-- Primarily work on one project at a time.
-- Want the fastest package installation.
-- Focus on modern Python packaging (`pyproject.toml`).
-- Need advanced dependency resolution.
-
 ---
 
 ## ☑️ What `gvit` does
 
 * 🪄 **Automatically creates environments** when cloning or initializing repos.
-* 📦 **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths.
-* 🎯 **Supports extra dependencies** (dev, test, etc.) from `pyproject.toml` or separate files.
-* 🔄 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git.
-* 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`).
-* 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes.
-* 👉 **Interactive** environment management.
-* 📊 **Command logging**: Automatic tracking of all command executions with analytics and error capture.
-* 🧘 **Cleans orphaned environments** automatically with `prune` command.
-* 🌳 **Visual command tree** to explore available commands.
-* 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings.
 * 🐍 **Multiple backends**: `venv` (built-in), `conda`, and `virtualenv` support.
+* 📦 Choose your **package manager** to install dependencies (`uv` or `pip`).
+* 🔄 **Auto-syncs environment on pull** if there are any changes in the dependencies.
+* ⬇︎ **Installs dependencies** from `requirements.txt`, `pyproject.toml`, or custom paths. **Supports extra dependencies** (dev, test, etc.).
 * 🔒 **Dependency validation**: `commit` command validates installed packages match declared dependencies.
 * 📄 **Status overview**: `status` command shows both Git and environment changes in one view.
+* 🍁 **Git command fallback**: Use `gvit` for all git commands - unknown commands automatically fallback to git.
+* 📝 **Tracks environments** in registry (`~/.config/gvit/envs/`) with metadata and dependency hashes.
+* 👉 **Interactive** environment management.
+* 🧘 **Cleans orphaned environments** automatically with `prune` command.
+* 📊 **Command logging**: Automatic tracking of all command executions with analytics and error capture.
+* 🧠 **Remembers your preferences** via local configuration (`~/.config/gvit/config.toml`).
+* 🔧 **Flexible configuration**: per-repository (`.gvit.toml`) or global settings.
+* 🌳 **Visual command tree** to explore available commands.
 
 ---
 
@@ -181,14 +168,30 @@ gvit config setup
 Or specify options directly:
 
 ```bash
-gvit config setup --backend venv --python 3.11 --base-deps requirements.txt
+# Use venv with uv
+gvit config setup --backend venv --package-manager uv --python 3.11 --base-deps requirements.txt
 
-# or use conda
-gvit config setup --backend conda --python 3.12
+# Or use conda with pip
+gvit config setup --backend conda --package-manager pip --python 3.12
 
-# or use virtualenv
-gvit config setup --backend virtualenv --python 3.11
+# Or use conda with uv
+gvit config setup --backend conda --package-manager uv --python 3.11
+
+# Or use virtualenv with pip
+gvit config setup --backend virtualenv --package-manager pip --python 3.11
+
+# Or any other combination...
 ```
+
+### Package Manager vs Virtual Environment Backend
+
+The **package manager** (`uv` or `pip`) and the **virtual environment backend** (`venv`, `virtualenv`, or `conda`) serve different purposes but complement each other.
+
+The backend defines where the Python environment lives and how it is isolated — for example, whether packages are stored in a venv directory, a virtualenv, or a Conda environment.
+
+The package manager defines how dependencies are installed and resolved inside that environment — for example, using pip install for the standard Python installer or uv pip install for a faster, cache-optimized installation.
+
+In `gvit` users can freely combine both layers (e.g., uv with venv, or pip with conda), since the package manager operates independently of the environment backend as long as it can target the correct Python interpreter.
 
 ### Clone a Repository
 
@@ -449,8 +452,8 @@ gvit logs config --ignore "status,tree"
 - 🌍 **Environment**: Associated environment name (if applicable).
 - ⚡ **Duration**: Execution time in milliseconds.
 - ✅ **Status**: Success (✅) or failure (❌).
-- ❌ **Error**: Error message (if command failed).
 - 📝 **Full Command**: Complete command with all arguments (verbose mode).
+- ❌ **Error**: Error message (if command failed).
 
 **Configuration:**
 - 🔧 Logs stored in `~/.config/gvit/logs/commands.csv`.
