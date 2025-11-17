@@ -46,17 +46,14 @@ def setup(
     target_dir_ = Path(target_dir).resolve()
     validate_directory(target_dir_)
 
-    # 2. Check if it is a git repository
-    validate_git_repo(target_dir_)
-
-    # 3. Load config
+    # 2. Load config
     local_config = load_local_config()
     verbose = verbose or get_verbose(local_config)
 
-    # 4. Load repo config
+    # 3. Load repo config
     repo_config = load_repo_config(str(target_dir_))
 
-    # 5. Create virtual environment
+    # 4. Create virtual environment
     backend = backend or get_backend(local_config)
     python = python or repo_config.get("gvit", {}).get("python") or get_python(local_config)
     package_manager = package_manager or get_package_manager(local_config)
@@ -65,7 +62,7 @@ def setup(
     validate_package_manager(package_manager)
     registry_name, venv_name, venv_path = create_venv(venv_name, str(target_dir_), backend, python, force, verbose)
 
-    # 6. Install dependencies
+    # 5. Install dependencies
     if no_deps:
         resolved_base_deps = None
         resolved_extra_deps = {}
@@ -84,7 +81,7 @@ def setup(
             verbose=verbose
         )
 
-    # 7. Save environment info to registry
+    # 6. Save environment info to registry
     env_registry = EnvRegistry()
     env_registry.save_venv_info(
         registry_name=registry_name,
@@ -98,7 +95,7 @@ def setup(
         extra_deps=resolved_extra_deps
     )
 
-    # 8. Summary message
+    # 7. Summary message
     show_summary_message(
         registry_name=registry_name, repo_path=target_dir_, venv_path=Path(venv_path), backend=backend
     )
