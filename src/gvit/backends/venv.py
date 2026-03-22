@@ -196,9 +196,24 @@ class VenvBackend:
         Get the global python command for the specified version.
         Tries: python{version} > python{major}.{minor} > python{major} > python > current python
             Example: "3.11" -> try python3.11, python3, python.
+        On Windows, tries the `py` launcher first (e.g. py -3.11).
         """
-        candidates = []
-        candidates.append(f"python{python_version}")
+        # On Windows, try the py launcher first (standard way to select Python versions)
+        if platform.system() == "Windows":
+            try:
+                result = subprocess.run(
+                    ["py", f"-{python_version}", "-c", "import sys; print(sys.executable)"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                python_path = result.stdout.strip()
+                if python_path and Path(python_path).exists():
+                    return python_path
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+
+        candidates = [f"python{python_version}"]
         if "." in python_version:
             major = python_version.split(".")[0]
             candidates.append(f"python{major}")
@@ -206,7 +221,8 @@ class VenvBackend:
         # Fallbacks
         candidates.extend(["python3", "python"])
 
-        for cmd in set(candidates):
+        # Use dict.fromkeys to deduplicate while preserving order
+        for cmd in dict.fromkeys(candidates):
             if shutil.which(cmd):
                 try:
                     result = subprocess.run(

@@ -547,4 +547,4 @@ def _open_editor(path: Path) -> None:
 def _show_summary_msg_reset(registry_name: str) -> None:
     """Function to show the summary message of the reset command."""
     typer.echo(f'\n🎉 Environment "{registry_name}" reset successfully!')
-    typer.echo(f'📖 Registry updated at: ~/.config/gvit/envs/{registry_name}.toml')
+    typer.echo(f'📖 Registry updated at: {ENVS_DIR / f"{registry_name}.toml"}')

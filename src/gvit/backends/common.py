@@ -12,7 +12,7 @@ from gvit.backends.virtualenv import VirtualenvBackend
 from gvit.backends.uv import UvBackend
 from gvit.utils.schemas import LocalConfig, RepoConfig
 from gvit.utils.utils import get_base_deps, get_extra_deps
-from gvit.utils.globals import DEFAULT_VENV_NAME
+from gvit.utils.globals import DEFAULT_VENV_NAME, ENVS_DIR
 
 
 def create_venv(
@@ -202,7 +202,7 @@ def show_summary_message(registry_name: str, repo_path: Path, venv_path: Path, b
     typer.echo("\n🎉  Project setup complete!")
     typer.echo(f"📁  Repository -> {repo_path.name} ({str(repo_path)})")
     typer.echo(f"🐍  Environment [{backend}] -> {venv_name} ({str(venv_path)})")
-    typer.echo(f"📖  Registry -> {registry_name} (~/.config/gvit/envs/{registry_name}.toml)")
+    typer.echo(f"📖  Registry -> {registry_name} ({ENVS_DIR / f'{registry_name}.toml'})")
     typer.echo("🚀  Ready to start working -> ", nl=False)
     typer.secho(f'cd {str(repo_path)} && {activate_cmd}', fg=typer.colors.YELLOW, bold=True)
 

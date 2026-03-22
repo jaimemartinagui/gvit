@@ -3,10 +3,14 @@ Module with global variables.
 """
 
 import os
+import platform
 from pathlib import Path
 
 
-LOCAL_CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "gvit"
+if platform.system() == "Windows":
+    LOCAL_CONFIG_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "gvit"
+else:
+    LOCAL_CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "gvit"
 LOCAL_CONFIG_FILE = LOCAL_CONFIG_DIR / "config.toml"
 ENVS_DIR = LOCAL_CONFIG_DIR / "envs"
 LOGS_DIR = LOCAL_CONFIG_DIR / "logs"

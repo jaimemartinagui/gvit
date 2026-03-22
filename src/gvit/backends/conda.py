@@ -86,9 +86,11 @@ class CondaBackend:
         """Method to check if uv is installed (globally or locally)."""
         uv_global_path = shutil.which("uv")
         result = subprocess.run(
-            [self.path, "run", "-n", venv_name, "which", "uv"], capture_output=True, text=True
+            [self.path, "run", "-n", venv_name, "python", "-c",
+             "import shutil; print(shutil.which('uv') or '')"],
+            capture_output=True, text=True
         )
-        is_installed_in_venv = result.returncode == 0
+        is_installed_in_venv = result.returncode == 0 and result.stdout.strip() != ""
         return bool(uv_global_path) or is_installed_in_venv
 
     def install_dependencies(
